@@ -1,4 +1,6 @@
-package com.jolotan.unraidapp
+package com.jolotan.unraidapp.ui
+
+import com.jolotan.unraidapp.data.getPlatform
 
 class Greeting {
     private val platform = getPlatform()

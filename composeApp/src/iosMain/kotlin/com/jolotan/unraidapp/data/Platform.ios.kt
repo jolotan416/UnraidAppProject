@@ -1,4 +1,4 @@
-package com.jolotan.unraidapp
+package com.jolotan.unraidapp.data
 
 import platform.UIKit.UIDevice
 

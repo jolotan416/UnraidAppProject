@@ -1,4 +1,4 @@
-package com.jolotan.unraidapp
+package com.jolotan.unraidapp.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
