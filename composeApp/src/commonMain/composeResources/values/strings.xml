@@ -1,4 +1,12 @@
 <resources>
+    <!-- Login screen texts -->
+    <string name="welcome_text">Welcome! Which NAS should we connect to?</string>
     <string name="ip_address">IP Address</string>
     <string name="port">Port</string>
+    <string name="connect">Connect</string>
+    <string name="wake_on_lan">Wake on LAN</string>
+    <string name="login_other_options">Or, choose one of the following:</string>
+
+    <!-- Content description -->
+    <string name="back_button_content_description">Back button</string>
 </resources>

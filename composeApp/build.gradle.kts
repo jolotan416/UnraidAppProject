@@ -36,17 +36,25 @@ kotlin {
             implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
+            // Core compose dependencies
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
+
+            // Lifecycle dependencies
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
+
+            // Kotlin dependencies
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.koin.core)
             implementation(libs.koin.compose.viewmodel.navigation)
+
+            // Navigation dependencies
+            implementation(libs.compose.navigation)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

@@ -31,12 +31,17 @@ class LoginScreenViewModel(platformConfig: PlatformConfig) : ViewModel() {
             is LoginScreenAction.UpdatePort -> {
                 portStateFlow.value = action.port
             }
+
+            is LoginScreenAction.Connect -> {
+                println("Connect to NAS with IP: ${ipAddressStateFlow.value} and port: ${portStateFlow.value}")
+            }
         }
     }
 
     sealed interface LoginScreenAction {
         data class UpdateIpAddress(val ipAddress: String) : LoginScreenAction
         data class UpdatePort(val port: String) : LoginScreenAction
+        data object Connect : LoginScreenAction
     }
 
     data class UiState(
