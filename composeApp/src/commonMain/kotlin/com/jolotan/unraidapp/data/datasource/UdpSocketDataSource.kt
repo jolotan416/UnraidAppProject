@@ -39,7 +39,7 @@ class UdpSocketDataSourceImpl : UdpSocketDataSource {
             val macAddressBytes = macAddress.convertToMacAddressBytes()
             val socketAddress = InetSocketAddress(ipAddress, port)
             val selectorManager = SelectorManager(Dispatchers.IO)
-            val socket = aSocket(selectorManager).udp().connect(socketAddress)
+            val socket = aSocket(selectorManager).udp().bind { broadcast = true }
             val packet = buildPacket {
                 write(MAGIC_PACKET_INITIAL_BYTE_ARRAY)
                 repeat(MAGIC_PACKET_MAC_ADDRESS_REPETITION) {
