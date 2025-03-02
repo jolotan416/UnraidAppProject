@@ -1,4 +1,4 @@
-package com.jolotan.unraidapp.ui.login
+package com.jolotan.unraidapp.ui.screens.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Divider
@@ -24,7 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jolotan.unraidapp.data.GenericState
-import com.jolotan.unraidapp.viewmodels.login.LoginScreenViewModel
+import com.jolotan.unraidapp.ui.viewmodels.login.LoginScreenViewModel
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -42,61 +43,59 @@ import unraidappproject.composeapp.generated.resources.welcome_text
 @Preview
 fun LoginScreen(navigateToWakeOnLan: () -> Unit) {
     val loginScreenViewModel: LoginScreenViewModel = koinViewModel()
-    val loginScreenUiState by loginScreenViewModel.uiStateStateFlow.collectAsStateWithLifecycle()
+    val loginScreenUiState by loginScreenViewModel.loginScreenUiStateStateFlow.collectAsStateWithLifecycle()
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-            .padding(40.dp)
-            .heightIn(min = 300.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Image(
-            modifier = Modifier.fillMaxWidth()
-                .heightIn(min = 150.dp, max = 200.dp),
-            painter = painterResource(Res.drawable.compose_multiplatform),
-            contentDescription = null
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        when (loginScreenUiState) {
-            GenericState.Loading -> LoginScreenLoadingState()
-            is GenericState.Loaded -> {
-                val uiState = loginScreenUiState as GenericState.Loaded
-                LoginScreenLoadedState(
-                    uiState = uiState.value,
-                    updateIpAddress = { ipAddress ->
-                        loginScreenViewModel.handleAction(
-                            LoginScreenViewModel.LoginScreenAction.UpdateIpAddress(ipAddress)
-                        )
-                    },
-                    updatePort = { port ->
-                        loginScreenViewModel.handleAction(
-                            LoginScreenViewModel.LoginScreenAction.UpdatePort(port)
-                        )
-                    },
-                    connect = {
-                        loginScreenViewModel.handleAction(LoginScreenViewModel.LoginScreenAction.Connect)
-                    },
-                    navigateToWakeOnLan = navigateToWakeOnLan
+    LazyColumn {
+        item {
+            Column(
+                modifier = Modifier.fillMaxSize()
+                    .padding(all = 20.dp)
+                    .heightIn(min = 300.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Image(
+                    modifier = Modifier.fillMaxWidth()
+                        .heightIn(min = 150.dp, max = 200.dp),
+                    painter = painterResource(Res.drawable.compose_multiplatform),
+                    contentDescription = null
                 )
-            }
+                Spacer(modifier = Modifier.height(16.dp))
 
-            is GenericState.Error -> {}
+                when (loginScreenUiState) {
+                    GenericState.Loading -> CircularProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    is GenericState.Loaded -> {
+                        val uiState = loginScreenUiState as GenericState.Loaded
+                        LoginScreenLoadedState(
+                            loginScreenUiState = uiState.value,
+                            updateIpAddress = { ipAddress ->
+                                loginScreenViewModel.handleAction(
+                                    LoginScreenViewModel.LoginScreenAction.UpdateIpAddress(ipAddress)
+                                )
+                            },
+                            updatePort = { port ->
+                                loginScreenViewModel.handleAction(
+                                    LoginScreenViewModel.LoginScreenAction.UpdatePort(port)
+                                )
+                            },
+                            connect = {
+                                loginScreenViewModel.handleAction(LoginScreenViewModel.LoginScreenAction.Connect)
+                            },
+                            navigateToWakeOnLan = navigateToWakeOnLan
+                        )
+                    }
+
+                    is GenericState.Error -> {}
+                }
+            }
         }
     }
 }
 
 @Composable
 @Preview
-fun LoginScreenLoadingState() {
-    CircularProgressIndicator(modifier = Modifier.fillMaxWidth())
-}
-
-@Composable
-@Preview
 fun LoginScreenLoadedState(
-    uiState: LoginScreenViewModel.UiState,
+    loginScreenUiState: LoginScreenViewModel.LoginScreenUiState,
     updateIpAddress: (String) -> Unit,
     updatePort: (String) -> Unit,
     connect: () -> Unit,
@@ -110,13 +109,13 @@ fun LoginScreenLoadedState(
     Spacer(modifier = Modifier.height(16.dp))
     TextField(
         modifier = Modifier.fillMaxWidth(),
-        value = uiState.ipAddress,
+        value = loginScreenUiState.ipAddress,
         onValueChange = updateIpAddress,
         placeholder = { Text(text = stringResource(Res.string.ip_address)) })
     Spacer(modifier = Modifier.height(16.dp))
     TextField(
         modifier = Modifier.fillMaxWidth(),
-        value = uiState.port,
+        value = loginScreenUiState.port,
         onValueChange = updatePort,
         placeholder = { Text(text = stringResource(Res.string.port)) })
     Spacer(modifier = Modifier.height(16.dp))
@@ -144,7 +143,10 @@ fun LoginScreenLoadedState(
         )
     }
     Spacer(modifier = Modifier.height(24.dp))
-    Button(onClick = navigateToWakeOnLan) {
+    Button(
+        onClick = navigateToWakeOnLan,
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Text(text = stringResource(Res.string.wake_on_lan))
     }
 }

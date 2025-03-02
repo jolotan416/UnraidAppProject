@@ -7,8 +7,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.jolotan.unraidapp.di.KoinUnraidApplication
 import com.jolotan.unraidapp.ui.containers.UnraidAppScaffold
-import com.jolotan.unraidapp.ui.login.LoginScreen
-import com.jolotan.unraidapp.ui.wake_on_lan.WakeOnLanScreen
+import com.jolotan.unraidapp.ui.screens.login.LoginScreen
+import com.jolotan.unraidapp.ui.screens.wake_on_lan.WakeOnLanScreen
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable

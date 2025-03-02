@@ -7,6 +7,12 @@
     <string name="wake_on_lan">Wake on LAN</string>
     <string name="login_other_options">Or, choose one of the following:</string>
 
+    <!-- Wake on LAN screen texts -->
+    <string name="mac_address">Mac address</string>
+    <string name="broadcast_ip_address">Broadcast IP Address</string>
+    <string name="wake_on_lan_port">Wake on LAN port</string>
+    <string name="send_wake_on_lan">Wake NAS on LAN</string>
+
     <!-- Content description -->
     <string name="back_button_content_description">Back button</string>
 </resources>

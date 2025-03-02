@@ -1,9 +1,9 @@
-package com.jolotan.unraidapp.viewmodels.login
+package com.jolotan.unraidapp.ui.viewmodels.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jolotan.unraidapp.data.GenericState
-import com.jolotan.unraidapp.data.PlatformConfig
+import com.jolotan.unraidapp.data.models.PlatformConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -13,9 +13,9 @@ import kotlinx.coroutines.flow.stateIn
 class LoginScreenViewModel(platformConfig: PlatformConfig) : ViewModel() {
     private val ipAddressStateFlow: MutableStateFlow<String> = MutableStateFlow("")
     private val portStateFlow: MutableStateFlow<String> = MutableStateFlow("")
-    val uiStateStateFlow: StateFlow<GenericState<UiState, Exception>> =
+    val loginScreenUiStateStateFlow: StateFlow<GenericState<LoginScreenUiState, Exception>> =
         combine(ipAddressStateFlow, portStateFlow) { ipAddress, port ->
-            GenericState.Loaded(UiState(ipAddress, port))
+            GenericState.Loaded(LoginScreenUiState(ipAddress, port))
         }.stateIn(viewModelScope, SharingStarted.Eagerly, GenericState.Loading)
 
     init {
@@ -44,7 +44,7 @@ class LoginScreenViewModel(platformConfig: PlatformConfig) : ViewModel() {
         data object Connect : LoginScreenAction
     }
 
-    data class UiState(
+    data class LoginScreenUiState(
         val ipAddress: String,
         val port: String,
     )
