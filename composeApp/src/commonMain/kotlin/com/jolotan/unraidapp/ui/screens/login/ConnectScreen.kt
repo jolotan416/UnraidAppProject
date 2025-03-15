@@ -25,7 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jolotan.unraidapp.data.GenericState
-import com.jolotan.unraidapp.ui.viewmodels.login.LoginScreenViewModel
+import com.jolotan.unraidapp.ui.viewmodels.login.ConnectScreenViewModel
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -41,9 +41,9 @@ import unraidappproject.composeapp.generated.resources.welcome_text
 
 @Composable
 @Preview
-fun LoginScreen(navigateToWakeOnLan: () -> Unit) {
-    val loginScreenViewModel: LoginScreenViewModel = koinViewModel()
-    val loginScreenUiState by loginScreenViewModel.loginScreenUiStateStateFlow.collectAsStateWithLifecycle()
+fun ConnectScreen(navigateToWakeOnLan: () -> Unit) {
+    val connectScreenViewModel: ConnectScreenViewModel = koinViewModel()
+    val loginScreenUiState by connectScreenViewModel.loginScreenUiStateStateFlow.collectAsStateWithLifecycle()
 
     LazyColumn {
         item {
@@ -69,17 +69,12 @@ fun LoginScreen(navigateToWakeOnLan: () -> Unit) {
                         LoginScreenLoadedState(
                             loginScreenUiState = uiState.value,
                             updateIpAddress = { ipAddress ->
-                                loginScreenViewModel.handleAction(
-                                    LoginScreenViewModel.LoginScreenAction.UpdateIpAddress(ipAddress)
-                                )
-                            },
-                            updatePort = { port ->
-                                loginScreenViewModel.handleAction(
-                                    LoginScreenViewModel.LoginScreenAction.UpdatePort(port)
+                                connectScreenViewModel.handleAction(
+                                    ConnectScreenViewModel.LoginScreenAction.UpdateIpAddress(ipAddress)
                                 )
                             },
                             connect = {
-                                loginScreenViewModel.handleAction(LoginScreenViewModel.LoginScreenAction.Connect)
+                                connectScreenViewModel.handleAction(ConnectScreenViewModel.LoginScreenAction.Connect)
                             },
                             navigateToWakeOnLan = navigateToWakeOnLan
                         )
@@ -95,9 +90,8 @@ fun LoginScreen(navigateToWakeOnLan: () -> Unit) {
 @Composable
 @Preview
 fun LoginScreenLoadedState(
-    loginScreenUiState: LoginScreenViewModel.LoginScreenUiState,
+    loginScreenUiState: ConnectScreenViewModel.LoginScreenUiState,
     updateIpAddress: (String) -> Unit,
-    updatePort: (String) -> Unit,
     connect: () -> Unit,
     navigateToWakeOnLan: () -> Unit
 ) {
@@ -112,12 +106,6 @@ fun LoginScreenLoadedState(
         value = loginScreenUiState.ipAddress,
         onValueChange = updateIpAddress,
         placeholder = { Text(text = stringResource(Res.string.ip_address)) })
-    Spacer(modifier = Modifier.height(16.dp))
-    TextField(
-        modifier = Modifier.fillMaxWidth(),
-        value = loginScreenUiState.port,
-        onValueChange = updatePort,
-        placeholder = { Text(text = stringResource(Res.string.port)) })
     Spacer(modifier = Modifier.height(16.dp))
     Button(
         onClick = connect,

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jolotan.unraidapp.data.GenericState
 import com.jolotan.unraidapp.data.datasource.UdpSocketDataSource
+import com.jolotan.unraidapp.data.models.DEFAULT_WAKE_ON_LAN_PORT
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,10 +15,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class WakeOnLanViewModel(private val udpSocketDataSource: UdpSocketDataSource) : ViewModel() {
-    companion object {
-        private const val DEFAULT_WAKE_ON_LAN_PORT = 9
-    }
-
     private val macAddressStateFlow: MutableStateFlow<String> = MutableStateFlow("")
     private val ipAddressStateFlow: MutableStateFlow<String> = MutableStateFlow("")
     private val portStateFlow: MutableStateFlow<Int?> = MutableStateFlow(DEFAULT_WAKE_ON_LAN_PORT)

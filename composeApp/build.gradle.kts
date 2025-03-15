@@ -3,9 +3,11 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.ksp)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.roomGradlePlugin)
 }
 
 kotlin {
@@ -14,7 +16,7 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-    
+
     listOf(
         iosX64(),
         iosArm64(),
@@ -25,15 +27,18 @@ kotlin {
             isStatic = true
         }
     }
-    
+
     jvm("desktop")
-    
+
     sourceSets {
         val desktopMain by getting
-        
+
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+
+            implementation(libs.koin.android)
+
             implementation(libs.ktor.client.okhttp)
         }
         commonMain.dependencies {
@@ -53,8 +58,12 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.koin.core)
             implementation(libs.koin.compose.viewmodel.navigation)
+
+            // Datasource dependencies
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.network)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
 
             // Navigation dependencies
             implementation(libs.compose.navigation)
@@ -67,6 +76,10 @@ kotlin {
             implementation(libs.ktor.client.darwin)
         }
     }
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 android {
@@ -98,6 +111,16 @@ android {
 
 dependencies {
     debugImplementation(compose.uiTooling)
+    listOf(
+        "kspCommonMainMetadata",
+        "kspAndroid",
+        "kspDesktop",
+        "kspIosSimulatorArm64",
+        "kspIosX64",
+        "kspIosArm64"
+    ).forEach {
+        add(it, libs.room.compiler)
+    }
 }
 
 compose.desktop {

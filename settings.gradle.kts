@@ -12,6 +12,14 @@ pluginManagement {
         }
         mavenCentral()
         gradlePluginPortal()
+
+        resolutionStrategy {
+            eachPlugin {
+                if (requested.id.id == "androidx.room") {
+                    useModule("androidx.room:room-gradle-plugin:${requested.version}")
+                }
+            }
+        }
     }
 }
 
