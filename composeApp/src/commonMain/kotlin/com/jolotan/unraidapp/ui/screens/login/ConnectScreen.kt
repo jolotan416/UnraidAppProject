@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,6 +34,7 @@ import unraidappproject.composeapp.generated.resources.Res
 import unraidappproject.composeapp.generated.resources.compose_multiplatform
 import unraidappproject.composeapp.generated.resources.connect
 import unraidappproject.composeapp.generated.resources.ip_address
+import unraidappproject.composeapp.generated.resources.ip_address_invalid_error_message
 import unraidappproject.composeapp.generated.resources.wake_on_lan
 import unraidappproject.composeapp.generated.resources.welcome_text
 
@@ -60,7 +62,7 @@ fun ConnectScreen(navigateToWakeOnLan: () -> Unit) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 when (loginScreenUiState) {
-                    GenericState.Loading -> CircularProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    GenericState.Loading -> CircularProgressIndicator()
                     is GenericState.Loaded -> {
                         val uiState = loginScreenUiState as GenericState.Loaded
                         LoginScreenLoadedState(
@@ -71,6 +73,9 @@ fun ConnectScreen(navigateToWakeOnLan: () -> Unit) {
                                         ipAddress
                                     )
                                 )
+                            },
+                            validateIpAddress = {
+                                connectScreenViewModel.handleAction(ConnectScreenViewModel.LoginScreenAction.ValidateIpAddress)
                             },
                             connect = {
                                 connectScreenViewModel.handleAction(ConnectScreenViewModel.LoginScreenAction.Connect)
@@ -91,6 +96,7 @@ fun ConnectScreen(navigateToWakeOnLan: () -> Unit) {
 fun LoginScreenLoadedState(
     loginScreenUiState: ConnectScreenViewModel.LoginScreenUiState,
     updateIpAddress: (String) -> Unit,
+    validateIpAddress: () -> Unit,
     connect: () -> Unit,
     navigateToWakeOnLan: () -> Unit
 ) {
@@ -101,10 +107,27 @@ fun LoginScreenLoadedState(
     )
     Spacer(modifier = Modifier.height(16.dp))
     TextField(
-        modifier = Modifier.fillMaxWidth(),
-        value = loginScreenUiState.ipAddress,
+        modifier = Modifier.fillMaxWidth()
+            .onFocusChanged { focusState ->
+                if (!focusState.hasFocus) {
+                    validateIpAddress()
+                }
+            },
+        value = loginScreenUiState.ipAddressFormData.value,
         onValueChange = updateIpAddress,
-        placeholder = { Text(text = stringResource(Res.string.ip_address)) })
+        placeholder = { Text(text = stringResource(Res.string.ip_address)) },
+        isError = !loginScreenUiState.ipAddressFormData.isValid,
+        singleLine = true,
+    )
+    if (!loginScreenUiState.ipAddressFormData.isValid) {
+        Text(
+            modifier = Modifier.fillMaxWidth(),
+            text = stringResource(Res.string.ip_address_invalid_error_message),
+            style = MaterialTheme.typography.caption,
+            color = MaterialTheme.colors.error,
+            textAlign = TextAlign.Start
+        )
+    }
     Spacer(modifier = Modifier.height(20.dp))
     Button(
         onClick = connect,

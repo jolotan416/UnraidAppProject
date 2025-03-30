@@ -5,6 +5,9 @@
     <string name="port">Port</string>
     <string name="connect">Connect</string>
     <string name="wake_on_lan">Wake on LAN</string>
+    <string name="ip_address_invalid_error_message">Your IP Address should be in the IPv4 format (x.x.x.x)</string>
+    <string name="mac_address_invalid_error_message">Your MAC Address should be in the following format (xx:xx:xx:xx:xx:xx)</string>
+    <string name="port_invalid_error_message">The port should be a valid number.</string>
 
     <!-- Wake on LAN screen texts -->
     <string name="mac_address">Mac address</string>
