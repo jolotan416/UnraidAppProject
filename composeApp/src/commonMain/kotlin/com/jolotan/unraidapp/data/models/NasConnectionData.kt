@@ -9,6 +9,7 @@ internal const val DEFAULT_WAKE_ON_LAN_PORT = 9
 data class NasConnectionData(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val ipAddress: String,
+    val broadcastIpAddress: String,
     val macAddress: String? = null,
     val wakeOnLanPort: Int = DEFAULT_WAKE_ON_LAN_PORT,
 )

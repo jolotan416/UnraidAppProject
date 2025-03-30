@@ -5,7 +5,6 @@
     <string name="port">Port</string>
     <string name="connect">Connect</string>
     <string name="wake_on_lan">Wake on LAN</string>
-    <string name="login_other_options">Or, choose one of the following:</string>
 
     <!-- Wake on LAN screen texts -->
     <string name="mac_address">Mac address</string>

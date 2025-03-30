@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "2f8494fb47d757f68a38b5df814c9a93",
+    "identityHash": "1a071fc97d445d519f6e6bf0cf186de7",
     "entities": [
       {
         "tableName": "nasConnection",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `ipAddress` TEXT NOT NULL, `macAddress` TEXT, `wakeOnLanPort` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `ipAddress` TEXT NOT NULL, `broadcastIpAddress` TEXT NOT NULL, `macAddress` TEXT, `wakeOnLanPort` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -17,6 +17,12 @@
           {
             "fieldPath": "ipAddress",
             "columnName": "ipAddress",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "broadcastIpAddress",
+            "columnName": "broadcastIpAddress",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -42,7 +48,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2f8494fb47d757f68a38b5df814c9a93')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1a071fc97d445d519f6e6bf0cf186de7')"
     ]
   }
 }

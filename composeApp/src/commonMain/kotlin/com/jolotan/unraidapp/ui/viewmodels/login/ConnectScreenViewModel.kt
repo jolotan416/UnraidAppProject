@@ -5,25 +5,32 @@ import androidx.lifecycle.viewModelScope
 import com.jolotan.unraidapp.data.GenericState
 import com.jolotan.unraidapp.data.models.PlatformConfig
 import com.jolotan.unraidapp.data.repositories.NasDataRepository
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ConnectScreenViewModel(
     platformConfig: PlatformConfig,
     private val nasDataRepository: NasDataRepository,
 ) : ViewModel() {
-    private val ipAddressStateFlow: MutableStateFlow<String> = MutableStateFlow("")
+    private val ipAddressSharedFlow: MutableSharedFlow<String> = MutableSharedFlow(replay = 1)
     val loginScreenUiStateStateFlow: StateFlow<GenericState<LoginScreenUiState, Exception>> =
         nasDataRepository.getNasConnectionDataFlow()
-            .onEach {
-                ipAddressStateFlow.value = it.firstOrNull()?.ipAddress ?: ""
-            }.combine(ipAddressStateFlow) { _, ipAddress ->
-                GenericState.Loaded(LoginScreenUiState(ipAddress))
+            .flatMapLatest { nasConnectionData ->
+                ipAddressSharedFlow.emit(nasConnectionData?.ipAddress ?: "")
+
+                ipAddressSharedFlow.mapLatest { ipAddress ->
+                    GenericState.Loaded(LoginScreenUiState(ipAddress))
+                }
             }.stateIn(viewModelScope, SharingStarted.Eagerly, GenericState.Loading)
 
     init {
@@ -33,13 +40,14 @@ class ConnectScreenViewModel(
     fun handleAction(action: LoginScreenAction) {
         when (action) {
             is LoginScreenAction.UpdateIpAddress -> {
-                ipAddressStateFlow.value = action.ipAddress
+                ipAddressSharedFlow.tryEmit(action.ipAddress)
             }
 
             is LoginScreenAction.Connect -> {
-                println("Connect to NAS with IP: ${ipAddressStateFlow.value}")
-                viewModelScope.launch {
-                    nasDataRepository.connectToNas(ipAddress = ipAddressStateFlow.value)
+                viewModelScope.launch(Dispatchers.IO) {
+                    val ipAddress = ipAddressSharedFlow.first()
+                    println("Connect to NAS with IP: $ipAddress")
+                    nasDataRepository.connectToNas(ipAddress = ipAddress)
                 }
             }
         }

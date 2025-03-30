@@ -3,18 +3,17 @@ package com.jolotan.unraidapp.ui.screens.login
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Divider
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
@@ -34,8 +33,6 @@ import unraidappproject.composeapp.generated.resources.Res
 import unraidappproject.composeapp.generated.resources.compose_multiplatform
 import unraidappproject.composeapp.generated.resources.connect
 import unraidappproject.composeapp.generated.resources.ip_address
-import unraidappproject.composeapp.generated.resources.login_other_options
-import unraidappproject.composeapp.generated.resources.port
 import unraidappproject.composeapp.generated.resources.wake_on_lan
 import unraidappproject.composeapp.generated.resources.welcome_text
 
@@ -70,7 +67,9 @@ fun ConnectScreen(navigateToWakeOnLan: () -> Unit) {
                             loginScreenUiState = uiState.value,
                             updateIpAddress = { ipAddress ->
                                 connectScreenViewModel.handleAction(
-                                    ConnectScreenViewModel.LoginScreenAction.UpdateIpAddress(ipAddress)
+                                    ConnectScreenViewModel.LoginScreenAction.UpdateIpAddress(
+                                        ipAddress
+                                    )
                                 )
                             },
                             connect = {
@@ -106,34 +105,18 @@ fun LoginScreenLoadedState(
         value = loginScreenUiState.ipAddress,
         onValueChange = updateIpAddress,
         placeholder = { Text(text = stringResource(Res.string.ip_address)) })
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(20.dp))
     Button(
         onClick = connect,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Text(text = stringResource(Res.string.connect))
     }
-    Spacer(modifier = Modifier.height(24.dp))
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Divider(
-            modifier = Modifier.weight(1f)
-                .height(1.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(text = stringResource(Res.string.login_other_options))
-        Spacer(modifier = Modifier.width(16.dp))
-        Divider(
-            modifier = Modifier.weight(1f)
-                .height(1.dp)
-        )
-    }
-    Spacer(modifier = Modifier.height(24.dp))
+    Spacer(modifier = Modifier.height(16.dp))
     Button(
         onClick = navigateToWakeOnLan,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.secondaryVariant)
     ) {
         Text(text = stringResource(Res.string.wake_on_lan))
     }

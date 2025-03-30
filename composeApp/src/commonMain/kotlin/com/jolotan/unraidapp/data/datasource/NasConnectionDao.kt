@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface NasConnectionDao {
     @Query("SELECT * FROM nasConnection")
-    fun getNasConnectionDataFlow(): Flow<List<NasConnectionData>>
+    fun getNasConnectionDataListFlow(): Flow<List<NasConnectionData>>
 
     @Insert
     suspend fun insertNasConnection(nasConnectionData: NasConnectionData)

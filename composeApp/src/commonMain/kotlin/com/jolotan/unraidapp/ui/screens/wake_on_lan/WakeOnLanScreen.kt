@@ -45,7 +45,7 @@ fun WakeOnLanScreen() {
                 },
                 updateIpAddress = {
                     wakeOnLanViewModel.handleAction(
-                        WakeOnLanViewModel.WakeOnLanScreenAction.UpdateIpAddress(it)
+                        WakeOnLanViewModel.WakeOnLanScreenAction.UpdateBroadcastIpAddress(it)
                     )
                 },
                 updatePort = {
@@ -80,7 +80,7 @@ fun WakeOnLanScreenLoadedState(
             )
             Spacer(modifier = Modifier.height(16.dp))
             TextField(
-                value = uiState.ipAddress,
+                value = uiState.broadcastIpAddress,
                 onValueChange = updateIpAddress,
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text(text = stringResource(Res.string.broadcast_ip_address)) }
