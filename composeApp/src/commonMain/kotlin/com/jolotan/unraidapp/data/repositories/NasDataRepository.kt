@@ -45,7 +45,7 @@ class NasDataRepositoryImpl(
         nasConnectionData.apply {
             udpSocketDataSource.sendWakeOnLanPacket(
                 macAddress ?: error("Mac address is null."),
-                ipAddress,
+                broadcastIpAddress,
                 wakeOnLanPort
             )
         }
