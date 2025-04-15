@@ -1,5 +1,7 @@
 package com.jolotan.unraidapp.di
 
+import com.jolotan.unraidapp.data.api.QueryApi
+import com.jolotan.unraidapp.data.api.QueryApiImpl
 import com.jolotan.unraidapp.data.datasource.NasConnectionDao
 import com.jolotan.unraidapp.data.datasource.NasConnectionDataSource
 import com.jolotan.unraidapp.data.datasource.NasConnectionDataSourceImpl
@@ -10,6 +12,10 @@ import com.jolotan.unraidapp.data.repositories.NasDataRepository
 import com.jolotan.unraidapp.data.repositories.NasDataRepositoryImpl
 import com.jolotan.unraidapp.ui.viewmodels.login.ConnectScreenViewModel
 import com.jolotan.unraidapp.ui.viewmodels.wakeonlan.WakeOnLanViewModel
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -46,6 +52,19 @@ val repositoriesModule = module {
 }
 
 val dataSourcesModule = module {
+    factory {
+        HttpClient {
+            install(ContentNegotiation) {
+                json(Json {
+                    encodeDefaults = true
+                    isLenient = true
+                    coerceInputValues = true
+                    explicitNulls = true
+                })
+            }
+        }
+    }
+    singleOf(::QueryApiImpl) bind QueryApi::class
     singleOf<UdpSocketDataSource>(::UdpSocketDataSourceImpl)
     singleOf(::NasConnectionDataSourceImpl) bind NasConnectionDataSource::class
 }

@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
@@ -62,6 +63,8 @@ kotlin {
             // Datasource dependencies
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.network)
+            implementation(libs.ktor.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.room.runtime)
             implementation(libs.sqlite.bundled)
 
@@ -71,6 +74,7 @@ kotlin {
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
+            implementation(libs.ktor.client.cio)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

@@ -13,9 +13,9 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -31,13 +31,19 @@ class ConnectScreenViewModel(
 
     private val ipAddressFormDataSharedFlow: MutableSharedFlow<FormData<String>> =
         MutableSharedFlow(replay = 1)
+    private val apiKeyFormDataSharedFlow: MutableSharedFlow<FormData<String>> =
+        MutableSharedFlow(replay = 1)
     val loginScreenUiStateStateFlow: StateFlow<GenericState<LoginScreenUiState, Exception>> =
         nasDataRepository.getNasConnectionDataFlow()
             .flatMapLatest { nasConnectionData ->
                 ipAddressFormDataSharedFlow.emit(FormData(nasConnectionData?.ipAddress ?: ""))
+                apiKeyFormDataSharedFlow.emit(FormData(nasConnectionData?.apiKey ?: ""))
 
-                ipAddressFormDataSharedFlow.mapLatest { ipAddress ->
-                    GenericState.Loaded(LoginScreenUiState(ipAddress))
+                combine(
+                    ipAddressFormDataSharedFlow,
+                    apiKeyFormDataSharedFlow
+                ) { ipAddress, apiKey ->
+                    GenericState.Loaded(LoginScreenUiState(ipAddress, apiKey))
                 }
             }.stateIn(viewModelScope, SharingStarted.Eagerly, GenericState.Loading)
 
@@ -54,7 +60,7 @@ class ConnectScreenViewModel(
                     )
                 }
 
-                is LoginScreenAction.ValidateIpAddress -> {
+                LoginScreenAction.ValidateIpAddress -> {
                     val ipAddressFormData = ipAddressFormDataSharedFlow.first()
                     ipAddressFormDataSharedFlow.emit(
                         ipAddressFormData.copy(
@@ -63,29 +69,67 @@ class ConnectScreenViewModel(
                     )
                 }
 
-                is LoginScreenAction.Connect -> {
+                is LoginScreenAction.UpdateApiKey -> {
+                    val previousValidationResult = apiKeyFormDataSharedFlow.first().isValid
+                    apiKeyFormDataSharedFlow.emit(
+                        FormData(
+                            value = action.apiKey,
+                            isValid = action.apiKey.isValidApiKey() || previousValidationResult
+                        )
+                    )
+                }
+
+                LoginScreenAction.ValidateApiKey -> {
+                    val apiKeyFormData = apiKeyFormDataSharedFlow.first()
+                    apiKeyFormDataSharedFlow.emit(
+                        apiKeyFormData.copy(
+                            isValid = apiKeyFormData.value.isValidApiKey()
+                        )
+                    )
+                }
+
+                LoginScreenAction.Connect -> {
                     val ipAddressFormData = ipAddressFormDataSharedFlow.first()
                     val ipAddress = ipAddressFormData.value
-                    if (!ipAddress.isValidIpAddress()) {
-                        ipAddressFormDataSharedFlow.emit(ipAddressFormData.copy(isValid = false))
+                    val apiKeyFormData = apiKeyFormDataSharedFlow.first()
+                    val apiKey = apiKeyFormData.value
 
-                        return@launch
-                    }
+                    when {
+                        !ipAddress.isValidIpAddress() -> {
+                            ipAddressFormDataSharedFlow.emit(ipAddressFormData.copy(isValid = false))
+                        }
 
-                    withContext(Dispatchers.IO) {
-                        println("Connect to NAS with IP: $ipAddress")
-                        nasDataRepository.connectToNas(ipAddress = ipAddress)
+                        !apiKey.isValidApiKey() -> {
+                            apiKeyFormDataSharedFlow.emit(apiKeyFormData.copy(isValid = false))
+                        }
+
+                        else -> {
+                            withContext(Dispatchers.IO) {
+                                println("Connect to NAS with IP: $ipAddress")
+                                nasDataRepository.connectToNas(
+                                    ipAddress = ipAddress,
+                                    apiKey = apiKey
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
+    private fun String.isValidApiKey(): Boolean = isNotBlank()
+
     sealed interface LoginScreenAction {
         data class UpdateIpAddress(val ipAddress: String) : LoginScreenAction
         data object ValidateIpAddress : LoginScreenAction
+        data class UpdateApiKey(val apiKey: String) : LoginScreenAction
+        data object ValidateApiKey : LoginScreenAction
         data object Connect : LoginScreenAction
     }
 
-    data class LoginScreenUiState(val ipAddressFormData: FormData<String>)
+    data class LoginScreenUiState(
+        val ipAddressFormData: FormData<String>,
+        val apiKeyFormData: FormData<String>
+    )
 }

@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,6 +32,8 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import unraidappproject.composeapp.generated.resources.Res
+import unraidappproject.composeapp.generated.resources.api_key
+import unraidappproject.composeapp.generated.resources.api_key_invalid_error_message
 import unraidappproject.composeapp.generated.resources.compose_multiplatform
 import unraidappproject.composeapp.generated.resources.connect
 import unraidappproject.composeapp.generated.resources.ip_address
@@ -77,6 +80,16 @@ fun ConnectScreen(navigateToWakeOnLan: () -> Unit) {
                             validateIpAddress = {
                                 connectScreenViewModel.handleAction(ConnectScreenViewModel.LoginScreenAction.ValidateIpAddress)
                             },
+                            updateApiKey = { apiKey ->
+                                connectScreenViewModel.handleAction(
+                                    ConnectScreenViewModel.LoginScreenAction.UpdateApiKey(
+                                        apiKey
+                                    )
+                                )
+                            },
+                            validateApiKey = {
+                                connectScreenViewModel.handleAction(ConnectScreenViewModel.LoginScreenAction.ValidateApiKey)
+                            },
                             connect = {
                                 connectScreenViewModel.handleAction(ConnectScreenViewModel.LoginScreenAction.Connect)
                             },
@@ -97,6 +110,8 @@ fun LoginScreenLoadedState(
     loginScreenUiState: ConnectScreenViewModel.LoginScreenUiState,
     updateIpAddress: (String) -> Unit,
     validateIpAddress: () -> Unit,
+    updateApiKey: (String) -> Unit,
+    validateApiKey: () -> Unit,
     connect: () -> Unit,
     navigateToWakeOnLan: () -> Unit
 ) {
@@ -123,6 +138,30 @@ fun LoginScreenLoadedState(
         Text(
             modifier = Modifier.fillMaxWidth(),
             text = stringResource(Res.string.ip_address_invalid_error_message),
+            style = MaterialTheme.typography.caption,
+            color = MaterialTheme.colors.error,
+            textAlign = TextAlign.Start
+        )
+    }
+    Spacer(modifier = Modifier.height(16.dp))
+    TextField(
+        modifier = Modifier.fillMaxWidth()
+            .onFocusChanged { focusState ->
+                if (!focusState.hasFocus) {
+                    validateApiKey()
+                }
+            },
+        value = loginScreenUiState.apiKeyFormData.value,
+        onValueChange = updateApiKey,
+        placeholder = { Text(text = stringResource(Res.string.api_key)) },
+        isError = !loginScreenUiState.apiKeyFormData.isValid,
+        visualTransformation = PasswordVisualTransformation(),
+        singleLine = true,
+    )
+    if (!loginScreenUiState.apiKeyFormData.isValid) {
+        Text(
+            modifier = Modifier.fillMaxWidth(),
+            text = stringResource(Res.string.api_key_invalid_error_message),
             style = MaterialTheme.typography.caption,
             color = MaterialTheme.colors.error,
             textAlign = TextAlign.Start

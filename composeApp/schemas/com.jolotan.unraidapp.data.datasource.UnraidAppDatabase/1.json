@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "1a071fc97d445d519f6e6bf0cf186de7",
+    "identityHash": "379e1ef8f21c3bff9a33ad20d421d05d",
     "entities": [
       {
         "tableName": "nasConnection",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `ipAddress` TEXT NOT NULL, `broadcastIpAddress` TEXT NOT NULL, `macAddress` TEXT, `wakeOnLanPort` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `ipAddress` TEXT NOT NULL, `broadcastIpAddress` TEXT NOT NULL, `apiKey` TEXT NOT NULL, `macAddress` TEXT, `wakeOnLanPort` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -27,6 +27,12 @@
             "notNull": true
           },
           {
+            "fieldPath": "apiKey",
+            "columnName": "apiKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
             "fieldPath": "macAddress",
             "columnName": "macAddress",
             "affinity": "TEXT"
@@ -43,12 +49,23 @@
           "columnNames": [
             "id"
           ]
-        }
+        },
+        "indices": [
+          {
+            "name": "index_nasConnection_ipAddress",
+            "unique": true,
+            "columnNames": [
+              "ipAddress"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_nasConnection_ipAddress` ON `${TABLE_NAME}` (`ipAddress`)"
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1a071fc97d445d519f6e6bf0cf186de7')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '379e1ef8f21c3bff9a33ad20d421d05d')"
     ]
   }
 }
