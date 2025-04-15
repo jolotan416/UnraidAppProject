@@ -60,6 +60,7 @@ class NasDataRepositoryImpl(
                 )
             )
         }
+        queryApi.updateCommonData(ipAddress, apiKey)
 
         Napier.d(tag = TAG, message = "initial query: ${queryApi.queryDashboardData()}")
     }
