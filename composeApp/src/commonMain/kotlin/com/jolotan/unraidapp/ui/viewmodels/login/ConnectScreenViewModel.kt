@@ -7,6 +7,7 @@ import com.jolotan.unraidapp.data.models.PlatformConfig
 import com.jolotan.unraidapp.data.repositories.NasDataRepository
 import com.jolotan.unraidapp.ui.utils.isValidIpAddress
 import com.jolotan.unraidapp.ui.viewdata.FormData
+import io.github.aakira.napier.Napier
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
@@ -20,13 +21,15 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+private const val TAG = "ConnectScreenViewModel"
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class ConnectScreenViewModel(
     platformConfig: PlatformConfig,
     private val nasDataRepository: NasDataRepository,
 ) : ViewModel() {
     init {
-        println("Starting in ${platformConfig.name}!!!")
+        Napier.d(tag = TAG, message = "Starting in ${platformConfig.name}!!!")
     }
 
     private val ipAddressFormDataSharedFlow: MutableSharedFlow<FormData<String>> =
@@ -105,7 +108,7 @@ class ConnectScreenViewModel(
 
                         else -> {
                             withContext(Dispatchers.IO) {
-                                println("Connect to NAS with IP: $ipAddress")
+                                Napier.d(tag = TAG, message = "Connect to NAS with IP: $ipAddress")
                                 nasDataRepository.connectToNas(
                                     ipAddress = ipAddress,
                                     apiKey = apiKey

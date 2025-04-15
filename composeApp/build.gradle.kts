@@ -62,6 +62,7 @@ kotlin {
 
             // Datasource dependencies
             implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.logging)
             implementation(libs.ktor.network)
             implementation(libs.ktor.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
@@ -70,6 +71,9 @@ kotlin {
 
             // Navigation dependencies
             implementation(libs.compose.navigation)
+
+            // Utilities dependencies
+            implementation(libs.napier.logging)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

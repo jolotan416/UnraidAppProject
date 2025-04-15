@@ -4,6 +4,7 @@ import SwiftUI
 struct iOSApp: App {
     init() {
         KoinModuleKt.doInitializeKoin()
+        NapierProxyKt.debugBuild()
     }
 
     var body: some Scene {

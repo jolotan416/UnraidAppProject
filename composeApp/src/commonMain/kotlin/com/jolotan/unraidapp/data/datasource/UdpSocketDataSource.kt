@@ -1,5 +1,6 @@
 package com.jolotan.unraidapp.data.datasource
 
+import io.github.aakira.napier.Napier
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.Datagram
 import io.ktor.network.sockets.InetSocketAddress
@@ -8,6 +9,8 @@ import io.ktor.utils.io.core.buildPacket
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.io.IOException
+
+private const val TAG = "UdpSocketDataSource"
 
 interface UdpSocketDataSource {
     suspend fun sendWakeOnLanPacket(macAddress: String, ipAddress: String, port: Int)
@@ -47,10 +50,16 @@ class UdpSocketDataSourceImpl : UdpSocketDataSource {
                 }
             }
 
-            println("Sending packet: $packet to socket address: $socketAddress...")
+            Napier.d(
+                tag = TAG,
+                message = "Sending packet: $packet to socket address: $socketAddress..."
+            )
             socket.send(Datagram(packet, socketAddress))
         } catch (exception: IOException) {
-            println("Encountered exception while sending WOL packet: ${exception.stackTraceToString()}")
+            Napier.e(
+                tag = TAG,
+                message = "Encountered exception while sending WOL packet: ${exception.stackTraceToString()}"
+            )
         }
     }
 

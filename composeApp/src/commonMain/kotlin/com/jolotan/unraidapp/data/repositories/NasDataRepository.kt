@@ -4,6 +4,7 @@ import com.jolotan.unraidapp.data.api.QueryApi
 import com.jolotan.unraidapp.data.datasource.NasConnectionDataSource
 import com.jolotan.unraidapp.data.datasource.UdpSocketDataSource
 import com.jolotan.unraidapp.data.models.NasConnectionData
+import io.github.aakira.napier.Napier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
+private const val TAG = "NasDataRepository"
 private const val IP_ADDRESS_DELIMITER = "."
 private const val DEFAULT_BROADCAST_IP_ADDRESS_HOST_NUMBER = "255"
 
@@ -59,7 +61,7 @@ class NasDataRepositoryImpl(
             )
         }
 
-        println("initial query: ${queryApi.queryDashboardData()}")
+        Napier.d(tag = TAG, message = "initial query: ${queryApi.queryDashboardData()}")
     }
 
     override suspend fun wakeOnLan(nasConnectionData: NasConnectionData) {

@@ -2,18 +2,19 @@ package com.jolotan.unraidapp.data.api
 
 import com.jolotan.unraidapp.data.models.backend.BackendData
 import com.jolotan.unraidapp.data.models.backend.DashboardData
+import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
-import io.ktor.client.statement.request
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.util.StringValues
+
+private const val TAG = "QueryApi"
 
 interface QueryApi {
     fun updateCommonData(ipAddress: String, apiKey: String)
@@ -37,7 +38,7 @@ class QueryApiImpl(private val httpClient: HttpClient) : QueryApi {
 
     private suspend fun performPostQuery(queryPath: String, queryBodyString: String): HttpResponse {
         val queryUrl = "$baseUrl/$queryPath"
-        println("Performing post query: $queryUrl")
+        Napier.d(tag = TAG, message = "Performing post query: $queryUrl")
         val response =
             httpClient.post(queryUrl) {
                 contentType(ContentType.Application.Json)
@@ -60,12 +61,6 @@ class QueryApiImpl(private val httpClient: HttpClient) : QueryApi {
 
                 setBody("{\"query\":\"$queryBodyString\"}")
             }
-
-        println("=======REQUEST ($queryUrl): ${response.request.headers}=======")
-
-        println("=======RESPONSE ($queryUrl, status=${response.status.value})=======")
-        println("Headers=${response.headers}")
-        println("Body=${response.bodyAsText()}")
 
         return when (response.status) {
             HttpStatusCode.OK -> response
