@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jolotan.unraidapp.data.GenericState
 import com.jolotan.unraidapp.data.repositories.NasDataRepository
+import com.jolotan.unraidapp.ui.utils.InternalLog
 import com.jolotan.unraidapp.ui.utils.isValidIpAddress
 import com.jolotan.unraidapp.ui.utils.isValidMacAddress
 import com.jolotan.unraidapp.ui.viewdata.FormData
@@ -17,6 +18,8 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+private const val TAG = "WakeOnLanViewModel"
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class WakeOnLanViewModel(private val nasDataRepository: NasDataRepository) : ViewModel() {
@@ -45,6 +48,7 @@ class WakeOnLanViewModel(private val nasDataRepository: NasDataRepository) : Vie
             }.stateIn(viewModelScope, SharingStarted.Eagerly, GenericState.Loading)
 
     fun handleAction(wakeOnLanScreenAction: WakeOnLanScreenAction) {
+        InternalLog.d(tag = TAG, message = "Received action: $wakeOnLanScreenAction")
         viewModelScope.launch {
             when (wakeOnLanScreenAction) {
                 is WakeOnLanScreenAction.UpdateMacAddress -> {
@@ -53,14 +57,19 @@ class WakeOnLanViewModel(private val nasDataRepository: NasDataRepository) : Vie
                     macAddressFormDataSharedFlow.emit(
                         FormData(
                             value = wakeOnLanScreenAction.macAddress,
-                            isValid = wakeOnLanScreenAction.macAddress.isValidMacAddress() || previousMacAddressValidationResult
+                            isValid = wakeOnLanScreenAction.macAddress.isValidMacAddress() || previousMacAddressValidationResult,
+                            isPreviouslyUpdated = true,
                         )
                     )
                 }
 
                 is WakeOnLanScreenAction.ValidateMacAddress -> {
                     val macAddressFormData = macAddressFormDataSharedFlow.first()
-                    macAddressFormDataSharedFlow.emit(macAddressFormData.copy(isValid = macAddressFormData.value.isValidMacAddress()))
+                    macAddressFormDataSharedFlow.emit(
+                        macAddressFormData.copy(
+                            isValid = !macAddressFormData.isPreviouslyUpdated || macAddressFormData.value.isValidMacAddress()
+                        )
+                    )
                 }
 
                 is WakeOnLanScreenAction.UpdateBroadcastIpAddress -> {
@@ -69,7 +78,8 @@ class WakeOnLanViewModel(private val nasDataRepository: NasDataRepository) : Vie
                     broadcastIpAddressFormDataSharedFlow.emit(
                         FormData(
                             value = wakeOnLanScreenAction.broadcastIpAddress,
-                            isValid = wakeOnLanScreenAction.broadcastIpAddress.isValidIpAddress() || previousIpAddressValidationResult
+                            isValid = wakeOnLanScreenAction.broadcastIpAddress.isValidIpAddress() || previousIpAddressValidationResult,
+                            isPreviouslyUpdated = true
                         )
                     )
                 }
@@ -78,7 +88,7 @@ class WakeOnLanViewModel(private val nasDataRepository: NasDataRepository) : Vie
                     val broadcastIpAddressFormData = broadcastIpAddressFormDataSharedFlow.first()
                     broadcastIpAddressFormDataSharedFlow.emit(
                         broadcastIpAddressFormData.copy(
-                            isValid = broadcastIpAddressFormData.value.isValidIpAddress()
+                            isValid = !broadcastIpAddressFormData.isPreviouslyUpdated || broadcastIpAddressFormData.value.isValidIpAddress()
                         )
                     )
                 }
@@ -89,14 +99,19 @@ class WakeOnLanViewModel(private val nasDataRepository: NasDataRepository) : Vie
                     wakeOnLanPortFormDataSharedFlow.emit(
                         FormData(
                             value = wakeOnLanScreenAction.port,
-                            isValid = wakeOnLanScreenAction.port.isValidPort() || previousPortValidationResult
+                            isValid = wakeOnLanScreenAction.port.isValidPort() || previousPortValidationResult,
+                            isPreviouslyUpdated = true
                         )
                     )
                 }
 
                 is WakeOnLanScreenAction.ValidatePort -> {
                     val portFormData = wakeOnLanPortFormDataSharedFlow.first()
-                    wakeOnLanPortFormDataSharedFlow.emit(portFormData.copy(isValid = portFormData.value != null))
+                    wakeOnLanPortFormDataSharedFlow.emit(
+                        portFormData.copy(
+                            isValid = !portFormData.isPreviouslyUpdated || portFormData.value != null
+                        )
+                    )
                 }
 
                 WakeOnLanScreenAction.SendWakeOnLan -> {

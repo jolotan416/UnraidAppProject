@@ -1,6 +1,6 @@
 package com.jolotan.unraidapp.data.datasource
 
-import io.github.aakira.napier.Napier
+import com.jolotan.unraidapp.ui.utils.InternalLog
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.Datagram
 import io.ktor.network.sockets.InetSocketAddress
@@ -50,13 +50,13 @@ class UdpSocketDataSourceImpl : UdpSocketDataSource {
                 }
             }
 
-            Napier.d(
+            InternalLog.d(
                 tag = TAG,
                 message = "Sending packet: $packet to socket address: $socketAddress..."
             )
             socket.send(Datagram(packet, socketAddress))
         } catch (exception: IOException) {
-            Napier.e(
+            InternalLog.e(
                 tag = TAG,
                 message = "Encountered exception while sending WOL packet: ${exception.stackTraceToString()}"
             )

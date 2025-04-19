@@ -2,7 +2,7 @@ package com.jolotan.unraidapp.data.api
 
 import com.jolotan.unraidapp.data.models.backend.BackendData
 import com.jolotan.unraidapp.data.models.backend.DashboardData
-import io.github.aakira.napier.Napier
+import com.jolotan.unraidapp.ui.utils.InternalLog
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
@@ -38,7 +38,7 @@ class QueryApiImpl(private val httpClient: HttpClient) : QueryApi {
 
     private suspend fun performPostQuery(queryPath: String, queryBodyString: String): HttpResponse {
         val queryUrl = "$baseUrl/$queryPath"
-        Napier.d(tag = TAG, message = "Performing post query: $queryUrl")
+        InternalLog.d(tag = TAG, message = "Performing post query: $queryUrl")
         val response =
             httpClient.post(queryUrl) {
                 contentType(ContentType.Application.Json)

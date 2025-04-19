@@ -4,7 +4,7 @@ import com.jolotan.unraidapp.data.api.QueryApi
 import com.jolotan.unraidapp.data.datasource.NasConnectionDataSource
 import com.jolotan.unraidapp.data.datasource.UdpSocketDataSource
 import com.jolotan.unraidapp.data.models.NasConnectionData
-import io.github.aakira.napier.Napier
+import com.jolotan.unraidapp.ui.utils.InternalLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -62,7 +62,7 @@ class NasDataRepositoryImpl(
         }
         queryApi.updateCommonData(ipAddress, apiKey)
 
-        Napier.d(tag = TAG, message = "initial query: ${queryApi.queryDashboardData()}")
+        InternalLog.d(tag = TAG, message = "initial query: ${queryApi.queryDashboardData()}")
     }
 
     override suspend fun wakeOnLan(nasConnectionData: NasConnectionData) {

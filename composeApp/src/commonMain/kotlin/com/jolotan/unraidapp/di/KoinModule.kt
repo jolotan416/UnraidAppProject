@@ -10,10 +10,9 @@ import com.jolotan.unraidapp.data.datasource.UdpSocketDataSourceImpl
 import com.jolotan.unraidapp.data.datasource.UnraidAppDatabase
 import com.jolotan.unraidapp.data.repositories.NasDataRepository
 import com.jolotan.unraidapp.data.repositories.NasDataRepositoryImpl
+import com.jolotan.unraidapp.ui.utils.InternalLog
 import com.jolotan.unraidapp.ui.viewmodels.login.ConnectScreenViewModel
 import com.jolotan.unraidapp.ui.viewmodels.wakeonlan.WakeOnLanViewModel
-import io.github.aakira.napier.DebugAntilog
-import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
@@ -70,7 +69,7 @@ val dataSourcesModule = module {
             install(Logging) {
                 logger = object : Logger {
                     override fun log(message: String) {
-                        Napier.d(tag = "HttpClient", message = message)
+                        InternalLog.d(tag = "HttpClient", message = message)
                     }
                 }
                 level = LogLevel.ALL

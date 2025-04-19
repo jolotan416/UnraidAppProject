@@ -5,9 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.jolotan.unraidapp.data.GenericState
 import com.jolotan.unraidapp.data.models.PlatformConfig
 import com.jolotan.unraidapp.data.repositories.NasDataRepository
+import com.jolotan.unraidapp.ui.utils.InternalLog
 import com.jolotan.unraidapp.ui.utils.isValidIpAddress
 import com.jolotan.unraidapp.ui.viewdata.FormData
-import io.github.aakira.napier.Napier
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
@@ -29,7 +29,7 @@ class ConnectScreenViewModel(
     private val nasDataRepository: NasDataRepository,
 ) : ViewModel() {
     init {
-        Napier.d(tag = TAG, message = "Starting in ${platformConfig.name}!!!")
+        InternalLog.d(tag = TAG, message = "Starting in ${platformConfig.name}!!!")
     }
 
     private val ipAddressFormDataSharedFlow: MutableSharedFlow<FormData<String>> =
@@ -51,6 +51,7 @@ class ConnectScreenViewModel(
             }.stateIn(viewModelScope, SharingStarted.Eagerly, GenericState.Loading)
 
     fun handleAction(action: LoginScreenAction) {
+        InternalLog.d(tag = TAG, message = "Received action: $action")
         viewModelScope.launch {
             when (action) {
                 is LoginScreenAction.UpdateIpAddress -> {
@@ -58,7 +59,8 @@ class ConnectScreenViewModel(
                     ipAddressFormDataSharedFlow.emit(
                         FormData(
                             value = action.ipAddress,
-                            isValid = action.ipAddress.isValidIpAddress() || previousValidationResult
+                            isValid = action.ipAddress.isValidIpAddress() || previousValidationResult,
+                            isPreviouslyUpdated = true,
                         )
                     )
                 }
@@ -67,7 +69,7 @@ class ConnectScreenViewModel(
                     val ipAddressFormData = ipAddressFormDataSharedFlow.first()
                     ipAddressFormDataSharedFlow.emit(
                         ipAddressFormData.copy(
-                            isValid = ipAddressFormData.value.isValidIpAddress()
+                            isValid = !ipAddressFormData.isPreviouslyUpdated || ipAddressFormData.value.isValidIpAddress()
                         )
                     )
                 }
@@ -77,7 +79,8 @@ class ConnectScreenViewModel(
                     apiKeyFormDataSharedFlow.emit(
                         FormData(
                             value = action.apiKey,
-                            isValid = action.apiKey.isValidApiKey() || previousValidationResult
+                            isValid = action.apiKey.isValidApiKey() || previousValidationResult,
+                            isPreviouslyUpdated = true,
                         )
                     )
                 }
@@ -86,7 +89,7 @@ class ConnectScreenViewModel(
                     val apiKeyFormData = apiKeyFormDataSharedFlow.first()
                     apiKeyFormDataSharedFlow.emit(
                         apiKeyFormData.copy(
-                            isValid = apiKeyFormData.value.isValidApiKey()
+                            isValid = !apiKeyFormData.isPreviouslyUpdated || apiKeyFormData.value.isValidApiKey()
                         )
                     )
                 }
@@ -108,7 +111,7 @@ class ConnectScreenViewModel(
 
                         else -> {
                             withContext(Dispatchers.IO) {
-                                Napier.d(tag = TAG, message = "Connect to NAS with IP: $ipAddress")
+                                InternalLog.d(tag = TAG, message = "Connect to NAS with IP: $ipAddress")
                                 nasDataRepository.connectToNas(
                                     ipAddress = ipAddress,
                                     apiKey = apiKey

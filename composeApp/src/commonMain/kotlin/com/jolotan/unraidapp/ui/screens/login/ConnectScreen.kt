@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.CircularProgressIndicator
@@ -18,9 +20,15 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -115,6 +123,9 @@ fun LoginScreenLoadedState(
     connect: () -> Unit,
     navigateToWakeOnLan: () -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
+    val focusRequester = remember { FocusRequester.Default }
+
     Text(
         modifier = Modifier.fillMaxWidth(),
         text = stringResource(Res.string.welcome_text),
@@ -126,13 +137,19 @@ fun LoginScreenLoadedState(
             .onFocusChanged { focusState ->
                 if (!focusState.hasFocus) {
                     validateIpAddress()
+                } else {
+                    updateIpAddress(loginScreenUiState.ipAddressFormData.value)
                 }
-            },
+            }.focusRequester(focusRequester),
         value = loginScreenUiState.ipAddressFormData.value,
         onValueChange = updateIpAddress,
         placeholder = { Text(text = stringResource(Res.string.ip_address)) },
         isError = !loginScreenUiState.ipAddressFormData.isValid,
         singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+        keyboardActions = KeyboardActions(onNext = {
+            focusManager.moveFocus(FocusDirection.Next)
+        })
     )
     if (!loginScreenUiState.ipAddressFormData.isValid) {
         Text(
@@ -149,14 +166,20 @@ fun LoginScreenLoadedState(
             .onFocusChanged { focusState ->
                 if (!focusState.hasFocus) {
                     validateApiKey()
+                } else {
+                    updateApiKey(loginScreenUiState.apiKeyFormData.value)
                 }
-            },
+            }.focusRequester(focusRequester),
         value = loginScreenUiState.apiKeyFormData.value,
         onValueChange = updateApiKey,
         placeholder = { Text(text = stringResource(Res.string.api_key)) },
         isError = !loginScreenUiState.apiKeyFormData.isValid,
         visualTransformation = PasswordVisualTransformation(),
         singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = {
+            connect()
+        })
     )
     if (!loginScreenUiState.apiKeyFormData.isValid) {
         Text(
