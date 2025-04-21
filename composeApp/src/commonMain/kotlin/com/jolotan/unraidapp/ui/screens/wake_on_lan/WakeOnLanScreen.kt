@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -30,6 +29,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jolotan.unraidapp.data.GenericState
+import com.jolotan.unraidapp.ui.components.CustomButton
+import com.jolotan.unraidapp.ui.components.CustomDialog
 import com.jolotan.unraidapp.ui.viewmodels.wakeonlan.WakeOnLanViewModel
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -38,6 +39,8 @@ import unraidappproject.composeapp.generated.resources.broadcast_ip_address
 import unraidappproject.composeapp.generated.resources.ip_address_invalid_error_message
 import unraidappproject.composeapp.generated.resources.mac_address
 import unraidappproject.composeapp.generated.resources.mac_address_invalid_error_message
+import unraidappproject.composeapp.generated.resources.nas_other_error_message
+import unraidappproject.composeapp.generated.resources.ok
 import unraidappproject.composeapp.generated.resources.port_invalid_error_message
 import unraidappproject.composeapp.generated.resources.send_wake_on_lan
 import unraidappproject.composeapp.generated.resources.wake_on_lan_port
@@ -77,6 +80,9 @@ fun WakeOnLanScreen() {
                 validatePort = {
                     wakeOnLanViewModel.handleAction(WakeOnLanViewModel.WakeOnLanScreenAction.ValidatePort)
                 },
+                dismissWakeOnLanErrorDialog = {
+                    wakeOnLanViewModel.handleAction(WakeOnLanViewModel.WakeOnLanScreenAction.ResetWakeOnLanConnectionState)
+                },
                 sendWakeOnLan = {
                     wakeOnLanViewModel.handleAction(WakeOnLanViewModel.WakeOnLanScreenAction.SendWakeOnLan)
                 })
@@ -88,6 +94,34 @@ fun WakeOnLanScreen() {
 
 @Composable
 fun WakeOnLanScreenLoadedState(
+    uiState: WakeOnLanViewModel.WakeOnLanScreenUiState,
+    updateMacAddress: (String) -> Unit,
+    validateMacAddress: () -> Unit,
+    updateIpAddress: (String) -> Unit,
+    validateIpAddress: () -> Unit,
+    updatePort: (String) -> Unit,
+    validatePort: () -> Unit,
+    dismissWakeOnLanErrorDialog: () -> Unit,
+    sendWakeOnLan: () -> Unit,
+) {
+    WakeOnLanForm(
+        uiState = uiState,
+        updateMacAddress = updateMacAddress,
+        validateMacAddress = validateMacAddress,
+        updateIpAddress = updateIpAddress,
+        validateIpAddress = validateIpAddress,
+        updatePort = updatePort,
+        validatePort = validatePort,
+        sendWakeOnLan = sendWakeOnLan
+    )
+    WakeOnLanConnection(
+        wakeOnLanConnectionState = uiState.wakeOnLanConnectionState,
+        dismissWakeOnLanErrorDialog = dismissWakeOnLanErrorDialog
+    )
+}
+
+@Composable
+fun WakeOnLanForm(
     uiState: WakeOnLanViewModel.WakeOnLanScreenUiState,
     updateMacAddress: (String) -> Unit,
     validateMacAddress: () -> Unit,
@@ -192,12 +226,30 @@ fun WakeOnLanScreenLoadedState(
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Button(
+            CustomButton(
+                modifier = Modifier.fillMaxWidth(),
+                buttonText = stringResource(Res.string.send_wake_on_lan),
+                enabled =
+                (uiState.wakeOnLanConnectionState != WakeOnLanViewModel.WakeOnLanConnectionState.Loading) &&
+                        (uiState.wakeOnLanConnectionState != WakeOnLanViewModel.WakeOnLanConnectionState.Connected),
+                isLoading = uiState.wakeOnLanConnectionState == WakeOnLanViewModel.WakeOnLanConnectionState.Loading,
                 onClick = sendWakeOnLan,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = stringResource(Res.string.send_wake_on_lan))
-            }
+            )
         }
+    }
+}
+
+@Composable
+fun WakeOnLanConnection(
+    wakeOnLanConnectionState: WakeOnLanViewModel.WakeOnLanConnectionState?,
+    dismissWakeOnLanErrorDialog: () -> Unit
+) {
+    if (wakeOnLanConnectionState == WakeOnLanViewModel.WakeOnLanConnectionState.Error) {
+        CustomDialog(
+            dialogText = stringResource(Res.string.nas_other_error_message),
+            buttonText = stringResource(Res.string.ok),
+            onButtonClick = dismissWakeOnLanErrorDialog,
+            onDismissRequest = dismissWakeOnLanErrorDialog
+        )
     }
 }

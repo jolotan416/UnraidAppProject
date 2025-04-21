@@ -8,8 +8,11 @@ import com.jolotan.unraidapp.ui.utils.InternalLog
 import com.jolotan.unraidapp.ui.utils.isValidIpAddress
 import com.jolotan.unraidapp.ui.utils.isValidMacAddress
 import com.jolotan.unraidapp.ui.viewdata.FormData
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -18,6 +21,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val TAG = "WakeOnLanViewModel"
 
@@ -29,6 +33,8 @@ class WakeOnLanViewModel(private val nasDataRepository: NasDataRepository) : Vie
         MutableSharedFlow(replay = 1)
     private val wakeOnLanPortFormDataSharedFlow: MutableSharedFlow<FormData<Int?>> =
         MutableSharedFlow(replay = 1)
+    private val wakeOnLanConnectionStateFlow: MutableStateFlow<WakeOnLanConnectionState?> =
+        MutableStateFlow(null)
     val wakeOnLanScreenUiStateStateFlow: StateFlow<GenericState<WakeOnLanScreenUiState, Exception>> =
         nasDataRepository.getNasConnectionDataFlow()
             .flatMapLatest { nasConnectionData ->
@@ -41,9 +47,17 @@ class WakeOnLanViewModel(private val nasDataRepository: NasDataRepository) : Vie
                 combine(
                     macAddressFormDataSharedFlow,
                     broadcastIpAddressFormDataSharedFlow,
-                    wakeOnLanPortFormDataSharedFlow
-                ) { macAddress, ipAddress, port ->
-                    GenericState.Loaded(WakeOnLanScreenUiState(macAddress, ipAddress, port))
+                    wakeOnLanPortFormDataSharedFlow,
+                    wakeOnLanConnectionStateFlow,
+                ) { macAddress, ipAddress, port, wakeOnLanConnectionState ->
+                    GenericState.Loaded(
+                        WakeOnLanScreenUiState(
+                            macAddress,
+                            ipAddress,
+                            port,
+                            wakeOnLanConnectionState
+                        )
+                    )
                 }
             }.stateIn(viewModelScope, SharingStarted.Eagerly, GenericState.Loading)
 
@@ -114,41 +128,65 @@ class WakeOnLanViewModel(private val nasDataRepository: NasDataRepository) : Vie
                     )
                 }
 
+                WakeOnLanScreenAction.ResetWakeOnLanConnectionState -> {
+                    wakeOnLanConnectionStateFlow.value = null
+                }
+
                 WakeOnLanScreenAction.SendWakeOnLan -> {
+                    var isFormValid = true
                     val macAddressFormData = macAddressFormDataSharedFlow.first()
-                    val broadcastIpAddressFormData = broadcastIpAddressFormDataSharedFlow.first()
-                    val portFormData = wakeOnLanPortFormDataSharedFlow.first()
-
-                    when {
-                        !macAddressFormData.value.isValidMacAddress() -> {
-                            macAddressFormDataSharedFlow.emit(macAddressFormData.copy(isValid = false))
-                        }
-
-                        !broadcastIpAddressFormData.value.isValidIpAddress() -> {
-                            broadcastIpAddressFormDataSharedFlow.emit(
-                                broadcastIpAddressFormData.copy(
-                                    isValid = false
-                                )
-                            )
-                        }
-
-                        portFormData.value == null -> {
-                            wakeOnLanPortFormDataSharedFlow.emit(portFormData.copy(isValid = false))
-                        }
-
-                        else -> {
-                            val nasConnectionData =
-                                nasDataRepository.getNasConnectionDataFlow().firstOrNull()
-                                    ?: error("No NAS connection data to update.")
-                            nasDataRepository.wakeOnLan(
-                                nasConnectionData.copy(
-                                    broadcastIpAddress = broadcastIpAddressFormData.value,
-                                    macAddress = macAddressFormData.value,
-                                    wakeOnLanPort = portFormData.value
-                                )
-                            )
-                        }
+                    val macAddress = macAddressFormData.value
+                    if (!macAddress.isValidMacAddress()) {
+                        macAddressFormDataSharedFlow.emit(macAddressFormData.copy(isValid = false))
+                        isFormValid = false
                     }
+
+                    val broadcastIpAddressFormData = broadcastIpAddressFormDataSharedFlow.first()
+                    val broadcastIpAddress = broadcastIpAddressFormData.value
+                    if (!broadcastIpAddress.isValidIpAddress()) {
+                        broadcastIpAddressFormDataSharedFlow.emit(
+                            broadcastIpAddressFormData.copy(
+                                isValid = false
+                            )
+                        )
+                        isFormValid = false
+                    }
+
+                    val portFormData = wakeOnLanPortFormDataSharedFlow.first()
+                    val port = portFormData.value
+                    if (port == null) {
+                        wakeOnLanPortFormDataSharedFlow.emit(portFormData.copy(isValid = false))
+                        isFormValid = false
+                    }
+
+                    if (isFormValid) {
+                        wakeOnLan(broadcastIpAddress, macAddress, port!!)
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun wakeOnLan(broadcastIpAddress: String, macAddress: String, port: Int) {
+        wakeOnLanConnectionStateFlow.value = WakeOnLanConnectionState.Loading
+        val nasConnectionData =
+            nasDataRepository.getNasConnectionDataFlow().firstOrNull()?.copy(
+                broadcastIpAddress = broadcastIpAddress,
+                macAddress = macAddress,
+                wakeOnLanPort = port
+            ) ?: error("No NAS connection data to update.")
+        withContext(Dispatchers.IO) {
+            when (nasDataRepository.wakeOnLan(nasConnectionData)) {
+                GenericState.Loading -> {
+                    wakeOnLanConnectionStateFlow.value = WakeOnLanConnectionState.Loading
+                }
+
+                is GenericState.Loaded -> {
+                    wakeOnLanConnectionStateFlow.value = WakeOnLanConnectionState.Connected
+                }
+
+                is GenericState.Error -> {
+                    wakeOnLanConnectionStateFlow.value = WakeOnLanConnectionState.Error
                 }
             }
         }
@@ -163,12 +201,20 @@ class WakeOnLanViewModel(private val nasDataRepository: NasDataRepository) : Vie
         data object ValidateBroadcastIpAddress : WakeOnLanScreenAction
         data class UpdatePort(val port: Int?) : WakeOnLanScreenAction
         data object ValidatePort : WakeOnLanScreenAction
+        data object ResetWakeOnLanConnectionState : WakeOnLanScreenAction
         data object SendWakeOnLan : WakeOnLanScreenAction
+    }
+
+    enum class WakeOnLanConnectionState {
+        Loading,
+        Connected,
+        Error,
     }
 
     data class WakeOnLanScreenUiState(
         val macAddressFormData: FormData<String>,
         val broadcastIpAddressFormData: FormData<String>,
         val portFormData: FormData<Int?>,
+        val wakeOnLanConnectionState: WakeOnLanConnectionState?,
     )
 }

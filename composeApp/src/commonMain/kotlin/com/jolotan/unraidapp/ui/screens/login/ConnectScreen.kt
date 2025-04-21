@@ -1,9 +1,7 @@
 package com.jolotan.unraidapp.ui.screens.login
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,11 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -34,9 +30,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jolotan.unraidapp.data.GenericState
+import com.jolotan.unraidapp.ui.components.CustomButton
+import com.jolotan.unraidapp.ui.components.CustomDialog
 import com.jolotan.unraidapp.ui.viewmodels.login.ConnectScreenViewModel
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -134,17 +131,17 @@ fun LoginScreenLoadedState(
     navigateToWakeOnLan: () -> Unit
 ) {
     LoginForm(
-        loginScreenUiState,
-        updateIpAddress,
-        validateIpAddress,
-        updateApiKey,
-        validateApiKey,
-        connect
+        loginScreenUiState = loginScreenUiState,
+        updateIpAddress = updateIpAddress,
+        validateIpAddress = validateIpAddress,
+        updateApiKey = updateApiKey,
+        validateApiKey = validateApiKey,
+        connect = connect
     )
     LoginConnection(
-        loginScreenUiState.loginConnectionState,
-        navigateToWakeOnLan,
-        dismissLoginConnectionDialog
+        loginConnectionState = loginScreenUiState.loginConnectionState,
+        navigateToWakeOnLan = navigateToWakeOnLan,
+        dismissLoginConnectionDialog = dismissLoginConnectionDialog
     )
 }
 
@@ -225,23 +222,14 @@ fun LoginForm(
         )
     }
     Spacer(modifier = Modifier.height(20.dp))
-    Button(
-        onClick = connect,
+    CustomButton(
         modifier = Modifier.fillMaxWidth(),
+        buttonText = stringResource(Res.string.connect),
         enabled = (loginScreenUiState.loginConnectionState != ConnectScreenViewModel.LoginConnectionState.Loading) &&
-                (loginScreenUiState.loginConnectionState != ConnectScreenViewModel.LoginConnectionState.Connected)
-    ) {
-        Box(modifier = Modifier.padding(vertical = 4.dp)) {
-            if (loginScreenUiState.loginConnectionState == ConnectScreenViewModel.LoginConnectionState.Loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.then(Modifier.size(16.dp)),
-                    strokeWidth = 2.dp
-                )
-            } else {
-                Text(text = stringResource(Res.string.connect))
-            }
-        }
-    }
+                (loginScreenUiState.loginConnectionState != ConnectScreenViewModel.LoginConnectionState.Connected),
+        isLoading = loginScreenUiState.loginConnectionState == ConnectScreenViewModel.LoginConnectionState.Loading,
+        onClick = connect,
+    )
 }
 
 @Composable
@@ -251,45 +239,21 @@ fun LoginConnection(
     dismissLoginConnectionDialog: () -> Unit
 ) {
     if (loginConnectionState == ConnectScreenViewModel.LoginConnectionState.ConnectionError) {
-        Dialog(onDismissRequest = dismissLoginConnectionDialog) {
-            Column(
-                modifier = Modifier.background(color = MaterialTheme.colors.background)
-                    .padding(20.dp)
-            ) {
-                Text(text = stringResource(Res.string.nas_connection_error_message))
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = {
-                        navigateToWakeOnLan()
-                        dismissLoginConnectionDialog()
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        modifier = Modifier.padding(vertical = 4.dp),
-                        text = stringResource(Res.string.wake_on_lan)
-                    )
-                }
-            }
-        }
+        CustomDialog(
+            dialogText = stringResource(Res.string.nas_connection_error_message),
+            buttonText = stringResource(Res.string.wake_on_lan),
+            onButtonClick = {
+                navigateToWakeOnLan()
+                dismissLoginConnectionDialog()
+            },
+            onDismissRequest = dismissLoginConnectionDialog
+        )
     } else if (loginConnectionState == ConnectScreenViewModel.LoginConnectionState.OtherError) {
-        Dialog(onDismissRequest = dismissLoginConnectionDialog) {
-            Column(
-                modifier = Modifier.background(color = MaterialTheme.colors.background)
-                    .padding(20.dp)
-            ) {
-                Text(text = stringResource(Res.string.nas_other_error_message))
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = dismissLoginConnectionDialog,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        modifier = Modifier.padding(vertical = 4.dp),
-                        text = stringResource(Res.string.ok)
-                    )
-                }
-            }
-        }
+        CustomDialog(
+            dialogText = stringResource(Res.string.nas_other_error_message),
+            buttonText = stringResource(Res.string.ok),
+            onButtonClick = dismissLoginConnectionDialog,
+            onDismissRequest = dismissLoginConnectionDialog
+        )
     }
 }

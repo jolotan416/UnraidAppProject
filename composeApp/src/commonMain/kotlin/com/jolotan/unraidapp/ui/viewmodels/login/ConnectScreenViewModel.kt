@@ -30,10 +30,6 @@ class ConnectScreenViewModel(
     platformConfig: PlatformConfig,
     private val nasDataRepository: NasDataRepository,
 ) : ViewModel() {
-    init {
-        InternalLog.d(tag = TAG, message = "Starting in ${platformConfig.name}!!!")
-    }
-
     private val ipAddressFormDataSharedFlow: MutableSharedFlow<FormData<String>> =
         MutableSharedFlow(replay = 1)
     private val apiKeyFormDataSharedFlow: MutableSharedFlow<FormData<String>> =
@@ -45,9 +41,6 @@ class ConnectScreenViewModel(
             .flatMapLatest { nasConnectionData ->
                 ipAddressFormDataSharedFlow.emit(FormData(nasConnectionData?.ipAddress ?: ""))
                 apiKeyFormDataSharedFlow.emit(FormData(nasConnectionData?.apiKey ?: ""))
-                nasConnectionData?.run {
-                    connectToNas(ipAddress, apiKey)
-                }
 
                 combine(
                     ipAddressFormDataSharedFlow,
@@ -57,6 +50,11 @@ class ConnectScreenViewModel(
                     GenericState.Loaded(LoginScreenUiState(ipAddress, apiKey, loginConnectionState))
                 }
             }.stateIn(viewModelScope, SharingStarted.Eagerly, GenericState.Loading)
+
+    init {
+        InternalLog.d(tag = TAG, message = "Starting in ${platformConfig.name}!!!")
+        handleAction(LoginScreenAction.Connect)
+    }
 
     fun handleAction(action: LoginScreenAction) {
         InternalLog.d(tag = TAG, message = "Received action: $action")
@@ -134,12 +132,10 @@ class ConnectScreenViewModel(
         loginConnectionStateFlow.value = LoginConnectionState.Loading
         withContext(Dispatchers.IO) {
             InternalLog.d(tag = TAG, message = "Connect to NAS with IP: $ipAddress")
-            val nasConnectionResult = nasDataRepository.connectToNas(
+            when (val nasConnectionResult = nasDataRepository.connectToNas(
                 ipAddress = ipAddress,
                 apiKey = apiKey
-            )
-
-            when (nasConnectionResult) {
+            )) {
                 GenericState.Loading -> {
                     loginConnectionStateFlow.value = LoginConnectionState.Loading
                 }

@@ -11,15 +11,19 @@ import com.jolotan.unraidapp.ui.utils.InternalLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 private const val TAG = "NasDataRepository"
 private const val IP_ADDRESS_DELIMITER = "."
 private const val DEFAULT_BROADCAST_IP_ADDRESS_HOST_NUMBER = "255"
+private const val WAKE_ON_LAN_RETRY_DELAY = 200L
+private const val WAKE_ON_LAN_TIMEOUT = 30000L
 
 interface NasDataRepository {
     // Only expose 1 connection data at a time
@@ -29,7 +33,7 @@ interface NasDataRepository {
         apiKey: String
     ): GenericState<ConnectionCheckData, BackendConnectionError>
 
-    suspend fun wakeOnLan(nasConnectionData: NasConnectionData)
+    suspend fun wakeOnLan(nasConnectionData: NasConnectionData): GenericState<ConnectionCheckData, BackendConnectionError>
 }
 
 class NasDataRepositoryImpl(
@@ -83,14 +87,32 @@ class NasDataRepositoryImpl(
         return connectionCheckResult
     }
 
-    override suspend fun wakeOnLan(nasConnectionData: NasConnectionData) {
+    override suspend fun wakeOnLan(nasConnectionData: NasConnectionData): GenericState<ConnectionCheckData, BackendConnectionError> {
         nasConnectionLocalDataSource.updateNasConnectionData(nasConnectionData)
-        nasConnectionData.apply {
-            udpSocketDataSource.sendWakeOnLanPacket(
+
+        return nasConnectionData.run {
+            val wakeOnLanResult = udpSocketDataSource.sendWakeOnLanPacket(
                 macAddress ?: error("Mac address is null."),
                 broadcastIpAddress,
                 wakeOnLanPort
             )
+            if (wakeOnLanResult is GenericState.Error) {
+                return@run wakeOnLanResult
+            }
+
+            withTimeoutOrNull(WAKE_ON_LAN_TIMEOUT) {
+                var result: GenericState<ConnectionCheckData, BackendConnectionError>
+                do {
+                    result = connectToNas(ipAddress, apiKey)
+                    InternalLog.d(
+                        tag = TAG,
+                        message = "Connection result after wake on LAN retry: $result"
+                    )
+                    delay(WAKE_ON_LAN_RETRY_DELAY)
+                } while (result !is GenericState.Loaded)
+
+                result
+            } ?: GenericState.Error(BackendConnectionError.ConnectionError)
         }
     }
 

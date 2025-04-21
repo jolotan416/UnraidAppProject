@@ -1,5 +1,7 @@
 package com.jolotan.unraidapp.data.datasource
 
+import com.jolotan.unraidapp.data.GenericState
+import com.jolotan.unraidapp.data.api.BackendConnectionError
 import com.jolotan.unraidapp.ui.utils.InternalLog
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.Datagram
@@ -13,7 +15,11 @@ import kotlinx.io.IOException
 private const val TAG = "UdpSocketDataSource"
 
 interface UdpSocketDataSource {
-    suspend fun sendWakeOnLanPacket(macAddress: String, ipAddress: String, port: Int)
+    suspend fun sendWakeOnLanPacket(
+        macAddress: String,
+        ipAddress: String,
+        port: Int
+    ): GenericState<Unit, BackendConnectionError>
 }
 
 class UdpSocketDataSourceImpl : UdpSocketDataSource {
@@ -37,30 +43,31 @@ class UdpSocketDataSourceImpl : UdpSocketDataSource {
         macAddress: String,
         ipAddress: String,
         port: Int
-    ) {
-        try {
-            val macAddressBytes = macAddress.convertToMacAddressBytes()
-            val socketAddress = InetSocketAddress(ipAddress, port)
-            val selectorManager = SelectorManager(Dispatchers.IO)
-            val socket = aSocket(selectorManager).udp().bind { broadcast = true }
-            val packet = buildPacket {
-                write(MAGIC_PACKET_INITIAL_BYTE_ARRAY)
-                repeat(MAGIC_PACKET_MAC_ADDRESS_REPETITION) {
-                    write(macAddressBytes)
-                }
+    ) = try {
+        val macAddressBytes = macAddress.convertToMacAddressBytes()
+        val socketAddress = InetSocketAddress(ipAddress, port)
+        val selectorManager = SelectorManager(Dispatchers.IO)
+        val socket = aSocket(selectorManager).udp().bind { broadcast = true }
+        val packet = buildPacket {
+            write(MAGIC_PACKET_INITIAL_BYTE_ARRAY)
+            repeat(MAGIC_PACKET_MAC_ADDRESS_REPETITION) {
+                write(macAddressBytes)
             }
-
-            InternalLog.d(
-                tag = TAG,
-                message = "Sending packet: $packet to socket address: $socketAddress..."
-            )
-            socket.send(Datagram(packet, socketAddress))
-        } catch (exception: IOException) {
-            InternalLog.e(
-                tag = TAG,
-                message = "Encountered exception while sending WOL packet: ${exception.stackTraceToString()}"
-            )
         }
+
+        InternalLog.d(
+            tag = TAG,
+            message = "Sending packet: $packet to socket address: $socketAddress..."
+        )
+        socket.send(Datagram(packet, socketAddress))
+
+        GenericState.Loaded(Unit)
+    } catch (exception: IOException) {
+        InternalLog.e(
+            tag = TAG,
+            message = "Encountered exception while sending WOL packet: ${exception.stackTraceToString()}"
+        )
+        GenericState.Error(BackendConnectionError.ConnectionError)
     }
 
     private fun String.convertToMacAddressBytes(): ByteArray =
