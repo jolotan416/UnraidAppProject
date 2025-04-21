@@ -46,7 +46,7 @@ import unraidappproject.composeapp.generated.resources.send_wake_on_lan
 import unraidappproject.composeapp.generated.resources.wake_on_lan_port
 
 @Composable
-fun WakeOnLanScreen() {
+fun WakeOnLanScreen(navigateToDashboard: () -> Unit) {
     val wakeOnLanViewModel: WakeOnLanViewModel = koinViewModel()
     val wakeOnLanScreenUiState by wakeOnLanViewModel.wakeOnLanScreenUiStateStateFlow.collectAsStateWithLifecycle()
 

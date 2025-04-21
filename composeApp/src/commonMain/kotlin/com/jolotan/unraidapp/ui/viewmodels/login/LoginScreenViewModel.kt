@@ -26,7 +26,7 @@ import kotlinx.coroutines.withContext
 private const val TAG = "ConnectScreenViewModel"
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class ConnectScreenViewModel(
+class LoginScreenViewModel(
     platformConfig: PlatformConfig,
     private val nasDataRepository: NasDataRepository,
 ) : ViewModel() {

@@ -17,6 +17,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -34,7 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jolotan.unraidapp.data.GenericState
 import com.jolotan.unraidapp.ui.components.CustomButton
 import com.jolotan.unraidapp.ui.components.CustomDialog
-import com.jolotan.unraidapp.ui.viewmodels.login.ConnectScreenViewModel
+import com.jolotan.unraidapp.ui.viewmodels.login.LoginScreenViewModel
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -54,9 +55,9 @@ import unraidappproject.composeapp.generated.resources.welcome_text
 
 @Composable
 @Preview
-fun ConnectScreen(navigateToWakeOnLan: () -> Unit) {
-    val connectScreenViewModel: ConnectScreenViewModel = koinViewModel()
-    val loginScreenUiState by connectScreenViewModel.loginScreenUiStateStateFlow.collectAsStateWithLifecycle()
+fun LoginScreen(navigateToWakeOnLan: () -> Unit, navigateToDashboard: () -> Unit) {
+    val loginScreenViewModel: LoginScreenViewModel = koinViewModel()
+    val loginScreenUiState by loginScreenViewModel.loginScreenUiStateStateFlow.collectAsStateWithLifecycle()
 
     LazyColumn {
         item {
@@ -82,31 +83,32 @@ fun ConnectScreen(navigateToWakeOnLan: () -> Unit) {
                         LoginScreenLoadedState(
                             loginScreenUiState = uiState.value,
                             updateIpAddress = { ipAddress ->
-                                connectScreenViewModel.handleAction(
-                                    ConnectScreenViewModel.LoginScreenAction.UpdateIpAddress(
+                                loginScreenViewModel.handleAction(
+                                    LoginScreenViewModel.LoginScreenAction.UpdateIpAddress(
                                         ipAddress
                                     )
                                 )
                             },
                             validateIpAddress = {
-                                connectScreenViewModel.handleAction(ConnectScreenViewModel.LoginScreenAction.ValidateIpAddress)
+                                loginScreenViewModel.handleAction(LoginScreenViewModel.LoginScreenAction.ValidateIpAddress)
                             },
                             updateApiKey = { apiKey ->
-                                connectScreenViewModel.handleAction(
-                                    ConnectScreenViewModel.LoginScreenAction.UpdateApiKey(
+                                loginScreenViewModel.handleAction(
+                                    LoginScreenViewModel.LoginScreenAction.UpdateApiKey(
                                         apiKey
                                     )
                                 )
                             },
                             validateApiKey = {
-                                connectScreenViewModel.handleAction(ConnectScreenViewModel.LoginScreenAction.ValidateApiKey)
+                                loginScreenViewModel.handleAction(LoginScreenViewModel.LoginScreenAction.ValidateApiKey)
                             },
                             dismissLoginConnectionDialog = {
-                                connectScreenViewModel.handleAction(ConnectScreenViewModel.LoginScreenAction.ResetLoginConnectionState)
+                                loginScreenViewModel.handleAction(LoginScreenViewModel.LoginScreenAction.ResetLoginConnectionState)
                             },
                             connect = {
-                                connectScreenViewModel.handleAction(ConnectScreenViewModel.LoginScreenAction.Connect)
+                                loginScreenViewModel.handleAction(LoginScreenViewModel.LoginScreenAction.Connect)
                             },
+                            navigateToDashboard = navigateToDashboard,
                             navigateToWakeOnLan = navigateToWakeOnLan
                         )
                     }
@@ -121,13 +123,14 @@ fun ConnectScreen(navigateToWakeOnLan: () -> Unit) {
 @Composable
 @Preview
 fun LoginScreenLoadedState(
-    loginScreenUiState: ConnectScreenViewModel.LoginScreenUiState,
+    loginScreenUiState: LoginScreenViewModel.LoginScreenUiState,
     updateIpAddress: (String) -> Unit,
     validateIpAddress: () -> Unit,
     updateApiKey: (String) -> Unit,
     validateApiKey: () -> Unit,
     dismissLoginConnectionDialog: () -> Unit,
     connect: () -> Unit,
+    navigateToDashboard: () -> Unit,
     navigateToWakeOnLan: () -> Unit
 ) {
     LoginForm(
@@ -140,6 +143,7 @@ fun LoginScreenLoadedState(
     )
     LoginConnection(
         loginConnectionState = loginScreenUiState.loginConnectionState,
+        navigateToDashboard = navigateToDashboard,
         navigateToWakeOnLan = navigateToWakeOnLan,
         dismissLoginConnectionDialog = dismissLoginConnectionDialog
     )
@@ -147,7 +151,7 @@ fun LoginScreenLoadedState(
 
 @Composable
 fun LoginForm(
-    loginScreenUiState: ConnectScreenViewModel.LoginScreenUiState,
+    loginScreenUiState: LoginScreenViewModel.LoginScreenUiState,
     updateIpAddress: (String) -> Unit,
     validateIpAddress: () -> Unit,
     updateApiKey: (String) -> Unit,
@@ -225,20 +229,21 @@ fun LoginForm(
     CustomButton(
         modifier = Modifier.fillMaxWidth(),
         buttonText = stringResource(Res.string.connect),
-        enabled = (loginScreenUiState.loginConnectionState != ConnectScreenViewModel.LoginConnectionState.Loading) &&
-                (loginScreenUiState.loginConnectionState != ConnectScreenViewModel.LoginConnectionState.Connected),
-        isLoading = loginScreenUiState.loginConnectionState == ConnectScreenViewModel.LoginConnectionState.Loading,
+        enabled = (loginScreenUiState.loginConnectionState != LoginScreenViewModel.LoginConnectionState.Loading) &&
+                (loginScreenUiState.loginConnectionState != LoginScreenViewModel.LoginConnectionState.Connected),
+        isLoading = loginScreenUiState.loginConnectionState == LoginScreenViewModel.LoginConnectionState.Loading,
         onClick = connect,
     )
 }
 
 @Composable
 fun LoginConnection(
-    loginConnectionState: ConnectScreenViewModel.LoginConnectionState?,
+    loginConnectionState: LoginScreenViewModel.LoginConnectionState?,
+    navigateToDashboard: () -> Unit,
     navigateToWakeOnLan: () -> Unit,
     dismissLoginConnectionDialog: () -> Unit
 ) {
-    if (loginConnectionState == ConnectScreenViewModel.LoginConnectionState.ConnectionError) {
+    if (loginConnectionState == LoginScreenViewModel.LoginConnectionState.ConnectionError) {
         CustomDialog(
             dialogText = stringResource(Res.string.nas_connection_error_message),
             buttonText = stringResource(Res.string.wake_on_lan),
@@ -248,12 +253,18 @@ fun LoginConnection(
             },
             onDismissRequest = dismissLoginConnectionDialog
         )
-    } else if (loginConnectionState == ConnectScreenViewModel.LoginConnectionState.OtherError) {
+    } else if (loginConnectionState == LoginScreenViewModel.LoginConnectionState.OtherError) {
         CustomDialog(
             dialogText = stringResource(Res.string.nas_other_error_message),
             buttonText = stringResource(Res.string.ok),
             onButtonClick = dismissLoginConnectionDialog,
             onDismissRequest = dismissLoginConnectionDialog
         )
+    }
+
+    LaunchedEffect(loginConnectionState) {
+        if (loginConnectionState == LoginScreenViewModel.LoginConnectionState.Connected) {
+            navigateToDashboard()
+        }
     }
 }

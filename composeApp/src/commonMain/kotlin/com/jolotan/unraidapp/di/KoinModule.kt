@@ -11,7 +11,7 @@ import com.jolotan.unraidapp.data.datasource.UnraidAppDatabase
 import com.jolotan.unraidapp.data.repositories.NasDataRepository
 import com.jolotan.unraidapp.data.repositories.NasDataRepositoryImpl
 import com.jolotan.unraidapp.ui.utils.InternalLog
-import com.jolotan.unraidapp.ui.viewmodels.login.ConnectScreenViewModel
+import com.jolotan.unraidapp.ui.viewmodels.login.LoginScreenViewModel
 import com.jolotan.unraidapp.ui.viewmodels.wakeonlan.WakeOnLanViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -47,7 +47,7 @@ fun KoinApplication.applicationModules() {
 }
 
 val viewModelsModule = module {
-    viewModelOf(::ConnectScreenViewModel)
+    viewModelOf(::LoginScreenViewModel)
     viewModelOf(::WakeOnLanViewModel)
 }
 
