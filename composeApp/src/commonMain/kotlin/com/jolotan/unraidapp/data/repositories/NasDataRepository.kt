@@ -1,14 +1,18 @@
 package com.jolotan.unraidapp.data.repositories
 
+import com.jolotan.unraidapp.data.GenericState
+import com.jolotan.unraidapp.data.api.BackendConnectionError
 import com.jolotan.unraidapp.data.api.UnraidNasQueryApi
 import com.jolotan.unraidapp.data.datasource.NasConnectionLocalDataSource
 import com.jolotan.unraidapp.data.datasource.UdpSocketDataSource
 import com.jolotan.unraidapp.data.models.NasConnectionData
+import com.jolotan.unraidapp.data.models.backend.ConnectionCheckData
 import com.jolotan.unraidapp.ui.utils.InternalLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -20,7 +24,11 @@ private const val DEFAULT_BROADCAST_IP_ADDRESS_HOST_NUMBER = "255"
 interface NasDataRepository {
     // Only expose 1 connection data at a time
     fun getNasConnectionDataFlow(): Flow<NasConnectionData?>
-    suspend fun connectToNas(ipAddress: String, apiKey: String)
+    suspend fun connectToNas(
+        ipAddress: String,
+        apiKey: String
+    ): GenericState<ConnectionCheckData, BackendConnectionError>
+
     suspend fun wakeOnLan(nasConnectionData: NasConnectionData)
 }
 
@@ -39,8 +47,12 @@ class NasDataRepositoryImpl(
     override fun getNasConnectionDataFlow(): Flow<NasConnectionData?> =
         nasConnectionLocalDataSource.getNasConnectionDataListFlow()
             .map { nasConnectionDataList -> nasConnectionDataList.firstOrNull() }
+            .distinctUntilChanged()
 
-    override suspend fun connectToNas(ipAddress: String, apiKey: String) {
+    override suspend fun connectToNas(
+        ipAddress: String,
+        apiKey: String
+    ): GenericState<ConnectionCheckData, BackendConnectionError> {
         var currentNasConnectionDataWithIpAddress =
             nasConnectionLocalDataSource.getNasConnectionDataListFlow()
                 .firstOrNull()
@@ -61,9 +73,14 @@ class NasDataRepositoryImpl(
                 currentNasConnectionDataWithIpAddress
             )
         }
-        queryApi.configureNasConnectionData(currentNasConnectionDataWithIpAddress)
 
-        InternalLog.d(tag = TAG, message = "initial query: ${queryApi.queryDashboardData()}")
+        val connectionCheckResult = queryApi.run {
+            configureNasConnectionData(currentNasConnectionDataWithIpAddress)
+            checkConnection()
+        }
+        InternalLog.d(tag = TAG, message = "Connection check result: $connectionCheckResult")
+
+        return connectionCheckResult
     }
 
     override suspend fun wakeOnLan(nasConnectionData: NasConnectionData) {

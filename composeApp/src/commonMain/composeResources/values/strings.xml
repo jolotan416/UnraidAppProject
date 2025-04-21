@@ -1,4 +1,7 @@
 <resources>
+    <!-- Common texts -->
+    <string name="ok">Ok</string>
+
     <!-- Login screen texts -->
     <string name="welcome_text">Welcome! Which NAS should we connect to?</string>
     <string name="ip_address">IP Address</string>
@@ -6,16 +9,20 @@
     <string name="port">Port</string>
     <string name="connect">Connect</string>
     <string name="wake_on_lan">Wake on LAN</string>
+
     <string name="ip_address_invalid_error_message">Your IP Address should be in the IPv4 format (x.x.x.x)</string>
     <string name="api_key_invalid_error_message">Please retrieve your API Key using Unraid API.</string>
-    <string name="mac_address_invalid_error_message">Your MAC Address should be in the following format (xx:xx:xx:xx:xx:xx)</string>
-    <string name="port_invalid_error_message">The port should be a valid number.</string>
+    <string name="nas_connection_error_message">Failed to connect to your Unraid NAS. Please check if your NAS is running properly.\n\nAlternatively, you can turn it on using the Wake On LAN button below.</string>
+    <string name="nas_other_error_message">Failed to connect to your Unraid NAS. Please try again later.</string>
 
     <!-- Wake on LAN screen texts -->
     <string name="mac_address">Mac address</string>
     <string name="broadcast_ip_address">Broadcast IP Address</string>
     <string name="wake_on_lan_port">Wake on LAN port</string>
     <string name="send_wake_on_lan">Wake NAS on LAN</string>
+
+    <string name="mac_address_invalid_error_message">Your MAC Address should be in the following format (xx:xx:xx:xx:xx:xx)</string>
+    <string name="port_invalid_error_message">The port should be a valid number.</string>
 
     <!-- Content description -->
     <string name="back_button_content_description">Back button</string>

@@ -1,7 +1,17 @@
 package com.jolotan.unraidapp.data.api
 
 enum class BackendQuery(val queryString: String) {
+    ConnectionCheck(
+        "info {" +
+                "  id  " +
+                "}"
+    ),
     Dashboard(
-        "query {info {cpu {cores brand}}}"
+                "info {" +
+                "  cpu {" +
+                "    cores  " +
+                "    brand  " +
+                "  }" +
+                "}"
     )
 }

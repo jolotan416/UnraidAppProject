@@ -3,10 +3,10 @@ package com.jolotan.unraidapp.data.api
 import com.jolotan.unraidapp.data.GenericState
 import com.jolotan.unraidapp.data.models.NasConnectionData
 import com.jolotan.unraidapp.data.models.backend.BackendData
+import com.jolotan.unraidapp.data.models.backend.ConnectionCheckData
 import com.jolotan.unraidapp.data.models.backend.DashboardData
 import com.jolotan.unraidapp.ui.utils.InternalLog
 import io.ktor.client.HttpClient
-import io.ktor.client.call.NoTransformationFoundException
 import io.ktor.client.call.body
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.post
@@ -16,11 +16,13 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.serialization.JsonConvertException
 import io.ktor.util.StringValues
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.io.IOException
 
 private const val TAG = "QueryApi"
 private const val GRAPH_QL_PATH = "graphql"
@@ -28,7 +30,8 @@ private const val GRAPH_QL_PATH = "graphql"
 interface UnraidNasQueryApi {
     val currentNasConnectionDataFlow: Flow<NasConnectionData>
     suspend fun configureNasConnectionData(nasConnectionData: NasConnectionData)
-    suspend fun queryDashboardData(): GenericState<BackendData<DashboardData>, Exception>
+    suspend fun checkConnection(): GenericState<ConnectionCheckData, BackendConnectionError>
+    suspend fun queryDashboardData(): GenericState<DashboardData, BackendConnectionError>
 }
 
 class UnraidNasQueryApiImpl(private val httpClient: HttpClient) : UnraidNasQueryApi {
@@ -42,21 +45,26 @@ class UnraidNasQueryApiImpl(private val httpClient: HttpClient) : UnraidNasQuery
         _currentNasConnectionDataFlow.emit(nasConnectionData)
     }
 
-    override suspend fun queryDashboardData(): GenericState<BackendData<DashboardData>, Exception> =
-        handlePostQueryState(GRAPH_QL_PATH, BackendQuery.Dashboard.queryString)
+    override suspend fun checkConnection(): GenericState<ConnectionCheckData, BackendConnectionError> =
+        handlePostQueryState(GRAPH_QL_PATH, BackendQuery.ConnectionCheck.queryBodyString)
+
+    override suspend fun queryDashboardData(): GenericState<DashboardData, BackendConnectionError> =
+        handlePostQueryState(GRAPH_QL_PATH, BackendQuery.Dashboard.queryBodyString)
 
     private suspend inline fun <reified T> handlePostQueryState(
         queryPath: String,
         queryBodyString: String
-    ): GenericState<T, Exception> =
+    ): GenericState<T, BackendConnectionError> =
         try {
-            val result = performPostQuery(queryPath, queryBodyString).body<T>()
+            val result = performPostQuery(queryPath, queryBodyString).body<BackendData<T>>()
 
-            GenericState.Loaded(result)
+            GenericState.Loaded(result.data)
+        } catch (exception: IOException) {
+            GenericState.Error(BackendConnectionError.ConnectionError)
+        } catch (exception: JsonConvertException) {
+            GenericState.Error(BackendConnectionError.ParsingError)
         } catch (exception: IllegalStateException) {
-            GenericState.Error(exception)
-        } catch (exception: NoTransformationFoundException) {
-            GenericState.Error(exception)
+            GenericState.Error(BackendConnectionError.InternalError)
         }
 
     private suspend fun performPostQuery(queryPath: String, queryBodyString: String): HttpResponse =
@@ -66,7 +74,7 @@ class UnraidNasQueryApiImpl(private val httpClient: HttpClient) : UnraidNasQuery
             val response =
                 httpClient.post(queryUrl) {
                     configureCommonHeaders(this@run)
-                    setBody("{\"query\":\"$queryBodyString\"}")
+                    setBody(queryBodyString)
                 }
 
             when (response.status) {
@@ -101,4 +109,7 @@ class UnraidNasQueryApiImpl(private val httpClient: HttpClient) : UnraidNasQuery
             })
         }
     }
+
+    private val BackendQuery.queryBodyString: String
+        get() = "{\"query\":\"query { $queryString } \"}"
 }

@@ -6,11 +6,11 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class DashboardData(
     @SerialName("info")
-    val systemData: SystemData
+    val dashboardSystemData: DashboardSystemData
 )
 
 @Serializable
-data class SystemData(
+data class DashboardSystemData(
     @SerialName("cpu")
     val cpuData: CpuData
 )

@@ -1,7 +1,9 @@
 package com.jolotan.unraidapp.ui.screens.login
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,11 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -32,6 +34,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jolotan.unraidapp.data.GenericState
 import com.jolotan.unraidapp.ui.viewmodels.login.ConnectScreenViewModel
@@ -46,6 +49,9 @@ import unraidappproject.composeapp.generated.resources.compose_multiplatform
 import unraidappproject.composeapp.generated.resources.connect
 import unraidappproject.composeapp.generated.resources.ip_address
 import unraidappproject.composeapp.generated.resources.ip_address_invalid_error_message
+import unraidappproject.composeapp.generated.resources.nas_connection_error_message
+import unraidappproject.composeapp.generated.resources.nas_other_error_message
+import unraidappproject.composeapp.generated.resources.ok
 import unraidappproject.composeapp.generated.resources.wake_on_lan
 import unraidappproject.composeapp.generated.resources.welcome_text
 
@@ -98,6 +104,9 @@ fun ConnectScreen(navigateToWakeOnLan: () -> Unit) {
                             validateApiKey = {
                                 connectScreenViewModel.handleAction(ConnectScreenViewModel.LoginScreenAction.ValidateApiKey)
                             },
+                            dismissLoginConnectionDialog = {
+                                connectScreenViewModel.handleAction(ConnectScreenViewModel.LoginScreenAction.ResetLoginConnectionState)
+                            },
                             connect = {
                                 connectScreenViewModel.handleAction(ConnectScreenViewModel.LoginScreenAction.Connect)
                             },
@@ -120,8 +129,33 @@ fun LoginScreenLoadedState(
     validateIpAddress: () -> Unit,
     updateApiKey: (String) -> Unit,
     validateApiKey: () -> Unit,
+    dismissLoginConnectionDialog: () -> Unit,
     connect: () -> Unit,
     navigateToWakeOnLan: () -> Unit
+) {
+    LoginForm(
+        loginScreenUiState,
+        updateIpAddress,
+        validateIpAddress,
+        updateApiKey,
+        validateApiKey,
+        connect
+    )
+    LoginConnection(
+        loginScreenUiState.loginConnectionState,
+        navigateToWakeOnLan,
+        dismissLoginConnectionDialog
+    )
+}
+
+@Composable
+fun LoginForm(
+    loginScreenUiState: ConnectScreenViewModel.LoginScreenUiState,
+    updateIpAddress: (String) -> Unit,
+    validateIpAddress: () -> Unit,
+    updateApiKey: (String) -> Unit,
+    validateApiKey: () -> Unit,
+    connect: () -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester.Default }
@@ -131,7 +165,7 @@ fun LoginScreenLoadedState(
         text = stringResource(Res.string.welcome_text),
         textAlign = TextAlign.Center
     )
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(8.dp))
     TextField(
         modifier = Modifier.fillMaxWidth()
             .onFocusChanged { focusState ->
@@ -194,15 +228,68 @@ fun LoginScreenLoadedState(
     Button(
         onClick = connect,
         modifier = Modifier.fillMaxWidth(),
+        enabled = (loginScreenUiState.loginConnectionState != ConnectScreenViewModel.LoginConnectionState.Loading) &&
+                (loginScreenUiState.loginConnectionState != ConnectScreenViewModel.LoginConnectionState.Connected)
     ) {
-        Text(text = stringResource(Res.string.connect))
+        Box(modifier = Modifier.padding(vertical = 4.dp)) {
+            if (loginScreenUiState.loginConnectionState == ConnectScreenViewModel.LoginConnectionState.Loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.then(Modifier.size(16.dp)),
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(text = stringResource(Res.string.connect))
+            }
+        }
     }
-    Spacer(modifier = Modifier.height(16.dp))
-    Button(
-        onClick = navigateToWakeOnLan,
-        modifier = Modifier.fillMaxWidth(),
-        colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.secondaryVariant)
-    ) {
-        Text(text = stringResource(Res.string.wake_on_lan))
+}
+
+@Composable
+fun LoginConnection(
+    loginConnectionState: ConnectScreenViewModel.LoginConnectionState?,
+    navigateToWakeOnLan: () -> Unit,
+    dismissLoginConnectionDialog: () -> Unit
+) {
+    if (loginConnectionState == ConnectScreenViewModel.LoginConnectionState.ConnectionError) {
+        Dialog(onDismissRequest = dismissLoginConnectionDialog) {
+            Column(
+                modifier = Modifier.background(color = MaterialTheme.colors.background)
+                    .padding(20.dp)
+            ) {
+                Text(text = stringResource(Res.string.nas_connection_error_message))
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        navigateToWakeOnLan()
+                        dismissLoginConnectionDialog()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        text = stringResource(Res.string.wake_on_lan)
+                    )
+                }
+            }
+        }
+    } else if (loginConnectionState == ConnectScreenViewModel.LoginConnectionState.OtherError) {
+        Dialog(onDismissRequest = dismissLoginConnectionDialog) {
+            Column(
+                modifier = Modifier.background(color = MaterialTheme.colors.background)
+                    .padding(20.dp)
+            ) {
+                Text(text = stringResource(Res.string.nas_other_error_message))
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = dismissLoginConnectionDialog,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        text = stringResource(Res.string.ok)
+                    )
+                }
+            }
+        }
     }
 }

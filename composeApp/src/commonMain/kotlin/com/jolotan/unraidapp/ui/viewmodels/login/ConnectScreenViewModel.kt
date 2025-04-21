@@ -3,6 +3,7 @@ package com.jolotan.unraidapp.ui.viewmodels.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jolotan.unraidapp.data.GenericState
+import com.jolotan.unraidapp.data.api.BackendConnectionError
 import com.jolotan.unraidapp.data.models.PlatformConfig
 import com.jolotan.unraidapp.data.repositories.NasDataRepository
 import com.jolotan.unraidapp.ui.utils.InternalLog
@@ -12,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -36,17 +38,23 @@ class ConnectScreenViewModel(
         MutableSharedFlow(replay = 1)
     private val apiKeyFormDataSharedFlow: MutableSharedFlow<FormData<String>> =
         MutableSharedFlow(replay = 1)
+    private val loginConnectionStateFlow: MutableStateFlow<LoginConnectionState?> =
+        MutableStateFlow(null)
     val loginScreenUiStateStateFlow: StateFlow<GenericState<LoginScreenUiState, Exception>> =
         nasDataRepository.getNasConnectionDataFlow()
             .flatMapLatest { nasConnectionData ->
                 ipAddressFormDataSharedFlow.emit(FormData(nasConnectionData?.ipAddress ?: ""))
                 apiKeyFormDataSharedFlow.emit(FormData(nasConnectionData?.apiKey ?: ""))
+                nasConnectionData?.run {
+                    connectToNas(ipAddress, apiKey)
+                }
 
                 combine(
                     ipAddressFormDataSharedFlow,
-                    apiKeyFormDataSharedFlow
-                ) { ipAddress, apiKey ->
-                    GenericState.Loaded(LoginScreenUiState(ipAddress, apiKey))
+                    apiKeyFormDataSharedFlow,
+                    loginConnectionStateFlow
+                ) { ipAddress, apiKey, loginConnectionState ->
+                    GenericState.Loaded(LoginScreenUiState(ipAddress, apiKey, loginConnectionState))
                 }
             }.stateIn(viewModelScope, SharingStarted.Eagerly, GenericState.Loading)
 
@@ -94,31 +102,58 @@ class ConnectScreenViewModel(
                     )
                 }
 
+                LoginScreenAction.ResetLoginConnectionState -> {
+                    loginConnectionStateFlow.value = null
+                }
+
                 LoginScreenAction.Connect -> {
+                    var isFormValid = true
                     val ipAddressFormData = ipAddressFormDataSharedFlow.first()
                     val ipAddress = ipAddressFormData.value
+                    if (!ipAddress.isValidIpAddress()) {
+                        ipAddressFormDataSharedFlow.emit(ipAddressFormData.copy(isValid = false))
+                        isFormValid = false
+                    }
+
                     val apiKeyFormData = apiKeyFormDataSharedFlow.first()
                     val apiKey = apiKeyFormData.value
-
-                    when {
-                        !ipAddress.isValidIpAddress() -> {
-                            ipAddressFormDataSharedFlow.emit(ipAddressFormData.copy(isValid = false))
-                        }
-
-                        !apiKey.isValidApiKey() -> {
-                            apiKeyFormDataSharedFlow.emit(apiKeyFormData.copy(isValid = false))
-                        }
-
-                        else -> {
-                            withContext(Dispatchers.IO) {
-                                InternalLog.d(tag = TAG, message = "Connect to NAS with IP: $ipAddress")
-                                nasDataRepository.connectToNas(
-                                    ipAddress = ipAddress,
-                                    apiKey = apiKey
-                                )
-                            }
-                        }
+                    if (!apiKey.isValidApiKey()) {
+                        apiKeyFormDataSharedFlow.emit(apiKeyFormData.copy(isValid = false))
+                        isFormValid = false
                     }
+
+                    if (isFormValid) {
+                        connectToNas(ipAddress, apiKey)
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun connectToNas(ipAddress: String, apiKey: String) {
+        loginConnectionStateFlow.value = LoginConnectionState.Loading
+        withContext(Dispatchers.IO) {
+            InternalLog.d(tag = TAG, message = "Connect to NAS with IP: $ipAddress")
+            val nasConnectionResult = nasDataRepository.connectToNas(
+                ipAddress = ipAddress,
+                apiKey = apiKey
+            )
+
+            when (nasConnectionResult) {
+                GenericState.Loading -> {
+                    loginConnectionStateFlow.value = LoginConnectionState.Loading
+                }
+
+                is GenericState.Loaded -> {
+                    loginConnectionStateFlow.value = LoginConnectionState.Connected
+                }
+
+                is GenericState.Error if nasConnectionResult.error == BackendConnectionError.ConnectionError -> {
+                    loginConnectionStateFlow.value = LoginConnectionState.ConnectionError
+                }
+
+                else -> {
+                    loginConnectionStateFlow.value = LoginConnectionState.OtherError
                 }
             }
         }
@@ -131,11 +166,20 @@ class ConnectScreenViewModel(
         data object ValidateIpAddress : LoginScreenAction
         data class UpdateApiKey(val apiKey: String) : LoginScreenAction
         data object ValidateApiKey : LoginScreenAction
+        data object ResetLoginConnectionState : LoginScreenAction
         data object Connect : LoginScreenAction
     }
 
     data class LoginScreenUiState(
         val ipAddressFormData: FormData<String>,
-        val apiKeyFormData: FormData<String>
+        val apiKeyFormData: FormData<String>,
+        val loginConnectionState: LoginConnectionState?
     )
+
+    enum class LoginConnectionState {
+        Loading,
+        Connected,
+        ConnectionError,
+        OtherError,
+    }
 }
