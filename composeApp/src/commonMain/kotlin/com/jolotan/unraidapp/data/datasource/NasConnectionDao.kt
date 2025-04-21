@@ -3,6 +3,7 @@ package com.jolotan.unraidapp.data.datasource
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.jolotan.unraidapp.data.models.NasConnectionData
@@ -13,10 +14,10 @@ interface NasConnectionDao {
     @Query("SELECT * FROM nasConnection")
     fun getNasConnectionDataListFlow(): Flow<List<NasConnectionData>>
 
-    @Insert
-    suspend fun insertNasConnection(nasConnectionData: NasConnectionData)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertNasConnection(nasConnectionData: NasConnectionData): Long
 
-    @Update
+    @Update(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateNasConnectionData(nasConnectionData: NasConnectionData)
 
     @Delete

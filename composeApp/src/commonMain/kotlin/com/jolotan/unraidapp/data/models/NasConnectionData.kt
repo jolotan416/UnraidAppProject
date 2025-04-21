@@ -12,6 +12,7 @@ data class NasConnectionData(
     val ipAddress: String,
     val broadcastIpAddress: String,
     val apiKey: String,
+    val baseUrl: String = "http://$ipAddress",
     val macAddress: String? = null,
     val wakeOnLanPort: Int = DEFAULT_WAKE_ON_LAN_PORT,
 )

@@ -1,7 +1,7 @@
 package com.jolotan.unraidapp.data.repositories
 
-import com.jolotan.unraidapp.data.api.QueryApi
-import com.jolotan.unraidapp.data.datasource.NasConnectionDataSource
+import com.jolotan.unraidapp.data.api.UnraidNasQueryApi
+import com.jolotan.unraidapp.data.datasource.NasConnectionLocalDataSource
 import com.jolotan.unraidapp.data.datasource.UdpSocketDataSource
 import com.jolotan.unraidapp.data.models.NasConnectionData
 import com.jolotan.unraidapp.ui.utils.InternalLog
@@ -25,54 +25,83 @@ interface NasDataRepository {
 }
 
 class NasDataRepositoryImpl(
-    private val nasConnectionDataSource: NasConnectionDataSource,
+    private val nasConnectionLocalDataSource: NasConnectionLocalDataSource,
     private val udpSocketDataSource: UdpSocketDataSource,
-    private val queryApi: QueryApi,
+    private val queryApi: UnraidNasQueryApi,
 ) : NasDataRepository {
     private val ioScope = CoroutineScope(Dispatchers.IO)
 
     init {
-        ioScope.launch {
-            nasConnectionDataSource.getNasConnectionDataListFlow()
-                .collect { nasConnectionDataList ->
-                    nasConnectionDataList.firstOrNull()?.run {
-                        queryApi.updateCommonData(ipAddress, apiKey)
-                    }
-                }
-        }
+        observeNasConnectionDataList()
+        observeApiCurrentNasConnectionData()
     }
 
     override fun getNasConnectionDataFlow(): Flow<NasConnectionData?> =
-        nasConnectionDataSource.getNasConnectionDataListFlow()
+        nasConnectionLocalDataSource.getNasConnectionDataListFlow()
             .map { nasConnectionDataList -> nasConnectionDataList.firstOrNull() }
 
     override suspend fun connectToNas(ipAddress: String, apiKey: String) {
-        val currentNasConnectionDataWithIpAddress =
-            nasConnectionDataSource.getNasConnectionDataListFlow()
+        var currentNasConnectionDataWithIpAddress =
+            nasConnectionLocalDataSource.getNasConnectionDataListFlow()
                 .firstOrNull()
                 ?.find { it.ipAddress == ipAddress }
         if (currentNasConnectionDataWithIpAddress == null) {
-            nasConnectionDataSource.createNasConnectionData(
-                NasConnectionData(
-                    ipAddress = ipAddress,
-                    apiKey = apiKey,
-                    broadcastIpAddress = ipAddress.getDefaultBroadcastIpAddress()
+            currentNasConnectionDataWithIpAddress =
+                nasConnectionLocalDataSource.createNasConnectionData(
+                    NasConnectionData(
+                        ipAddress = ipAddress,
+                        apiKey = apiKey,
+                        broadcastIpAddress = ipAddress.getDefaultBroadcastIpAddress()
+                    )
                 )
+        } else {
+            currentNasConnectionDataWithIpAddress =
+                currentNasConnectionDataWithIpAddress.copy(apiKey = apiKey)
+            nasConnectionLocalDataSource.updateNasConnectionData(
+                currentNasConnectionDataWithIpAddress
             )
         }
-        queryApi.updateCommonData(ipAddress, apiKey)
+        queryApi.configureNasConnectionData(currentNasConnectionDataWithIpAddress)
 
         InternalLog.d(tag = TAG, message = "initial query: ${queryApi.queryDashboardData()}")
     }
 
     override suspend fun wakeOnLan(nasConnectionData: NasConnectionData) {
-        nasConnectionDataSource.updateNasConnectionData(nasConnectionData)
+        nasConnectionLocalDataSource.updateNasConnectionData(nasConnectionData)
         nasConnectionData.apply {
             udpSocketDataSource.sendWakeOnLanPacket(
                 macAddress ?: error("Mac address is null."),
                 broadcastIpAddress,
                 wakeOnLanPort
             )
+        }
+    }
+
+    private fun observeNasConnectionDataList() {
+        ioScope.launch {
+            nasConnectionLocalDataSource.getNasConnectionDataListFlow()
+                .collect { nasConnectionDataList ->
+                    InternalLog.d(
+                        tag = TAG,
+                        message = "NasConnectionDataList updated: $nasConnectionDataList"
+                    )
+                    nasConnectionDataList.firstOrNull()?.run {
+                        queryApi.configureNasConnectionData(this)
+                    }
+                }
+        }
+    }
+
+    private fun observeApiCurrentNasConnectionData() {
+        ioScope.launch {
+            queryApi.currentNasConnectionDataFlow
+                .collect { nasConnectionData ->
+                    InternalLog.d(
+                        tag = TAG,
+                        message = "NasConnectionData from API updated: $nasConnectionData"
+                    )
+                    nasConnectionLocalDataSource.updateNasConnectionData(nasConnectionData)
+                }
         }
     }
 

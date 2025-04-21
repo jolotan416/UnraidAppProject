@@ -1,10 +1,10 @@
 package com.jolotan.unraidapp.di
 
-import com.jolotan.unraidapp.data.api.QueryApi
-import com.jolotan.unraidapp.data.api.QueryApiImpl
+import com.jolotan.unraidapp.data.api.UnraidNasQueryApi
+import com.jolotan.unraidapp.data.api.UnraidNasQueryApiImpl
 import com.jolotan.unraidapp.data.datasource.NasConnectionDao
-import com.jolotan.unraidapp.data.datasource.NasConnectionDataSource
-import com.jolotan.unraidapp.data.datasource.NasConnectionDataSourceImpl
+import com.jolotan.unraidapp.data.datasource.NasConnectionLocalDataSource
+import com.jolotan.unraidapp.data.datasource.NasConnectionLocalDataSourceImpl
 import com.jolotan.unraidapp.data.datasource.UdpSocketDataSource
 import com.jolotan.unraidapp.data.datasource.UdpSocketDataSourceImpl
 import com.jolotan.unraidapp.data.datasource.UnraidAppDatabase
@@ -76,9 +76,9 @@ val dataSourcesModule = module {
             }
         }
     }
-    singleOf(::QueryApiImpl) bind QueryApi::class
+    singleOf(::UnraidNasQueryApiImpl) bind UnraidNasQueryApi::class
     singleOf<UdpSocketDataSource>(::UdpSocketDataSourceImpl)
-    singleOf(::NasConnectionDataSourceImpl) bind NasConnectionDataSource::class
+    singleOf(::NasConnectionLocalDataSourceImpl) bind NasConnectionLocalDataSource::class
 }
 
 val databaseModule = module {
