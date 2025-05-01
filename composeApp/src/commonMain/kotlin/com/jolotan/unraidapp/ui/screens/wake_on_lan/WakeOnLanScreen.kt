@@ -13,6 +13,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -85,7 +86,9 @@ fun WakeOnLanScreen(navigateToDashboard: () -> Unit) {
                 },
                 sendWakeOnLan = {
                     wakeOnLanViewModel.handleAction(WakeOnLanViewModel.WakeOnLanScreenAction.SendWakeOnLan)
-                })
+                },
+                navigateToDashboard = navigateToDashboard
+            )
         }
 
         is GenericState.Error -> {}
@@ -103,6 +106,7 @@ fun WakeOnLanScreenLoadedState(
     validatePort: () -> Unit,
     dismissWakeOnLanErrorDialog: () -> Unit,
     sendWakeOnLan: () -> Unit,
+    navigateToDashboard: () -> Unit,
 ) {
     WakeOnLanForm(
         uiState = uiState,
@@ -116,7 +120,8 @@ fun WakeOnLanScreenLoadedState(
     )
     WakeOnLanConnection(
         wakeOnLanConnectionState = uiState.wakeOnLanConnectionState,
-        dismissWakeOnLanErrorDialog = dismissWakeOnLanErrorDialog
+        dismissWakeOnLanErrorDialog = dismissWakeOnLanErrorDialog,
+        navigateToDashboard = navigateToDashboard,
     )
 }
 
@@ -242,7 +247,8 @@ fun WakeOnLanForm(
 @Composable
 fun WakeOnLanConnection(
     wakeOnLanConnectionState: WakeOnLanViewModel.WakeOnLanConnectionState?,
-    dismissWakeOnLanErrorDialog: () -> Unit
+    dismissWakeOnLanErrorDialog: () -> Unit,
+    navigateToDashboard: () -> Unit,
 ) {
     if (wakeOnLanConnectionState == WakeOnLanViewModel.WakeOnLanConnectionState.Error) {
         CustomDialog(
@@ -251,5 +257,11 @@ fun WakeOnLanConnection(
             onButtonClick = dismissWakeOnLanErrorDialog,
             onDismissRequest = dismissWakeOnLanErrorDialog
         )
+    }
+
+    LaunchedEffect(wakeOnLanConnectionState) {
+        if (wakeOnLanConnectionState == WakeOnLanViewModel.WakeOnLanConnectionState.Connected) {
+            navigateToDashboard()
+        }
     }
 }
