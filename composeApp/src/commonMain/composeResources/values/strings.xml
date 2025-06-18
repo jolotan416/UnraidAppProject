@@ -2,6 +2,7 @@
     <!-- Common texts -->
     <string name="ok">Ok</string>
     <string name="nas_other_error_message">Failed to connect to your Unraid NAS. Please try again later.</string>
+    <string name="generic_loading_text">Please wait while we get your Unraid NAS data.</string>
 
     <!-- Login screen texts -->
     <string name="welcome_text">Welcome! Which NAS should we connect to?</string>
@@ -23,6 +24,9 @@
 
     <string name="mac_address_invalid_error_message">Your MAC Address should be in the following format (xx:xx:xx:xx:xx:xx)</string>
     <string name="port_invalid_error_message">The port should be a valid number.</string>
+
+    <!-- Dashboard screen texts -->
+    <string name="cpu_label">CPU</string>
 
     <!-- Content description -->
     <string name="back_button_content_description">Back button</string>
