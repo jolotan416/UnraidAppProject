@@ -61,6 +61,7 @@ kotlin {
 
             // Kotlin dependencies
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.datetime)
             implementation(libs.koin.core)
             implementation(libs.koin.compose.viewmodel.navigation)
 

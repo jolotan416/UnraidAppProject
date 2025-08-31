@@ -3,6 +3,10 @@
     <string name="ok">Ok</string>
     <string name="nas_other_error_message">Failed to connect to your Unraid NAS. Please try again later.</string>
     <string name="generic_loading_text">Please wait while we get your Unraid NAS data.</string>
+    <string name="disk_size_kb">%1$s KB</string>
+    <string name="disk_size_mb">%1$s MB</string>
+    <string name="disk_size_gb">%1$s GB</string>
+    <string name="disk_size_tb">%1$s TB</string>
 
     <!-- Login screen texts -->
     <string name="welcome_text">Welcome! Which NAS should we connect to?</string>
@@ -26,8 +30,11 @@
     <string name="port_invalid_error_message">The port should be a valid number.</string>
 
     <!-- Dashboard screen texts -->
-    <string name="cpu_label">CPU</string>
+    <string name="unraid_registration">Unraid OS: %1$s</string>
+    <string name="expires_at">Expires at: %1$s</string>
+    <string name="array_disk_size">%1$s used out of %2$s</string>
 
     <!-- Content description -->
     <string name="back_button_content_description">Back button</string>
+    <string name="array_content_description">Array</string>
 </resources>

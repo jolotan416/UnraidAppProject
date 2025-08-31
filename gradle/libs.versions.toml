@@ -8,6 +8,7 @@ android-targetSdk = "34"
 # Kotlin versions
 kotlin = "2.1.0"
 kotlinx-coroutines = "1.10.1"
+kotlinx-datetime = "0.6.2"
 koin = "4.0.2"
 ksp = "2.1.10-1.0.31"
 
@@ -50,6 +51,7 @@ androidx-material = { group = "com.google.android.material", name = "material", 
 ## Kotlin dependencies
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-compose-viewmodel-navigation = { module = "io.insert-koin:koin-compose-viewmodel-navigation", version.ref = "koin" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 
 # Compose dependencies
 compose-navigation = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "compose-navigation" }
