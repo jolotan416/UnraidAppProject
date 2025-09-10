@@ -1,5 +1,6 @@
 package com.jolotan.unraidapp.data.models
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -15,4 +16,7 @@ data class NasConnectionData(
     val baseUrl: String = "http://$ipAddress",
     val macAddress: String? = null,
     val wakeOnLanPort: Int = DEFAULT_WAKE_ON_LAN_PORT,
+
+    @ColumnInfo(defaultValue = "false")
+    val isActive: Boolean = true,
 )

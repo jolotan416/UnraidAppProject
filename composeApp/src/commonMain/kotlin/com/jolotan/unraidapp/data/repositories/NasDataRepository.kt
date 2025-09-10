@@ -50,7 +50,10 @@ class NasDataRepositoryImpl(
 
     override fun getNasConnectionDataFlow(): Flow<NasConnectionData?> =
         nasConnectionLocalDataSource.getNasConnectionDataListFlow()
-            .map { nasConnectionDataList -> nasConnectionDataList.firstOrNull() }
+            .map { nasConnectionDataList ->
+                nasConnectionDataList.firstOrNull { it.isActive }
+                    ?: nasConnectionDataList.firstOrNull()
+            }
             .distinctUntilChanged()
 
     override suspend fun connectToNas(
@@ -77,6 +80,17 @@ class NasDataRepositoryImpl(
                 currentNasConnectionDataWithIpAddress
             )
         }
+
+        nasConnectionLocalDataSource.getNasConnectionDataListFlow()
+            .firstOrNull()
+            ?.filter { it.ipAddress != ipAddress }
+            ?.forEach { nasConnectionData ->
+                InternalLog.d(
+                    TAG,
+                    "Deactivating connection data with ip address: ${nasConnectionData.ipAddress}"
+                )
+                nasConnectionLocalDataSource.updateNasConnectionData(nasConnectionData.copy(isActive = false))
+            }
 
         val connectionCheckResult = queryApi.run {
             configureNasConnectionData(currentNasConnectionDataWithIpAddress)
@@ -118,16 +132,15 @@ class NasDataRepositoryImpl(
 
     private fun observeNasConnectionDataList() {
         ioScope.launch {
-            nasConnectionLocalDataSource.getNasConnectionDataListFlow()
-                .collect { nasConnectionDataList ->
-                    InternalLog.d(
-                        tag = TAG,
-                        message = "NasConnectionDataList updated: $nasConnectionDataList"
-                    )
-                    nasConnectionDataList.firstOrNull()?.run {
-                        queryApi.configureNasConnectionData(this)
-                    }
+            getNasConnectionDataFlow().collect { nasConnectionData ->
+                InternalLog.d(
+                    tag = TAG,
+                    message = "Nas connection data updated: $nasConnectionData"
+                )
+                nasConnectionData?.run {
+                    queryApi.configureNasConnectionData(this)
                 }
+            }
         }
     }
 

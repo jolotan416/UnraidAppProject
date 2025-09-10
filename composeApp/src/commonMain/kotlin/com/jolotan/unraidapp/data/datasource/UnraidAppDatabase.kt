@@ -1,5 +1,6 @@
 package com.jolotan.unraidapp.data.datasource
 
+import androidx.room.AutoMigration
 import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
@@ -10,7 +11,11 @@ import kotlinx.coroutines.IO
 
 internal const val ROOM_DATABASE_FILENAME = "unraid_app.db"
 
-@Database(entities = [NasConnectionData::class], version = 1)
+@Database(
+    entities = [NasConnectionData::class],
+    version = 2,
+    autoMigrations = [AutoMigration(from = 1, to = 2)]
+)
 @ConstructedBy(UnraidAppDatabaseConstructor::class)
 abstract class UnraidAppDatabase : RoomDatabase() {
     abstract fun getNasConnectionDao(): NasConnectionDao
