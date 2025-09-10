@@ -42,7 +42,8 @@ enum class BackendQuery(val queryString: String) {
                 "}" +
                 "shares {" +
                 "  name" +
-                "  comment" +
+                "  used" +
+                "  free" +
                 "}"
     )
 }

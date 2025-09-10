@@ -12,10 +12,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -190,8 +190,8 @@ fun LoginForm(
         Text(
             modifier = Modifier.fillMaxWidth(),
             text = stringResource(Res.string.ip_address_invalid_error_message),
-            style = MaterialTheme.typography.caption,
-            color = MaterialTheme.colors.error,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.error,
             textAlign = TextAlign.Start
         )
     }
@@ -220,8 +220,8 @@ fun LoginForm(
         Text(
             modifier = Modifier.fillMaxWidth(),
             text = stringResource(Res.string.api_key_invalid_error_message),
-            style = MaterialTheme.typography.caption,
-            color = MaterialTheme.colors.error,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.error,
             textAlign = TextAlign.Start
         )
     }

@@ -1,39 +1,38 @@
 package com.jolotan.unraidapp.ui.screens.dashboard
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.LinearProgressIndicator
-import androidx.compose.material.Text
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jolotan.unraidapp.data.GenericState
 import com.jolotan.unraidapp.data.models.backend.DashboardArrayCapacityData
 import com.jolotan.unraidapp.data.models.backend.DashboardArraySizeData
+import com.jolotan.unraidapp.data.models.backend.DashboardData
 import com.jolotan.unraidapp.data.models.backend.DashboardDiskData
 import com.jolotan.unraidapp.data.models.backend.DashboardRegistrationData
 import com.jolotan.unraidapp.data.models.backend.DashboardServerData
+import com.jolotan.unraidapp.data.models.backend.DashboardShareData
+import com.jolotan.unraidapp.ui.components.LinearProgressIndicatorWithText
 import com.jolotan.unraidapp.ui.utils.toDateOrNull
 import com.jolotan.unraidapp.ui.utils.toFormattedFileSize
 import com.jolotan.unraidapp.ui.viewmodels.dashboard.DashboardScreenViewModel
@@ -47,7 +46,6 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import unraidappproject.composeapp.generated.resources.Res
 import unraidappproject.composeapp.generated.resources.array_content_description
-import unraidappproject.composeapp.generated.resources.array_disk_size
 import unraidappproject.composeapp.generated.resources.expires_at
 import unraidappproject.composeapp.generated.resources.generic_loading_text
 import unraidappproject.composeapp.generated.resources.ic_rack_server
@@ -69,25 +67,7 @@ fun DashboardScreen() {
         }
 
         is GenericState.Loaded -> {
-            LazyVerticalStaggeredGrid(
-                modifier = Modifier.fillMaxWidth().padding(all = 20.dp),
-                columns = StaggeredGridCells.Fixed(2),
-                verticalItemSpacing = 16.dp,
-                horizontalArrangement = Arrangement.spacedBy(space = 12.dp)
-            ) {
-                item(span = StaggeredGridItemSpan.FullLine) {
-                    DashboardHeader(
-                        serverData = uiState.value.serverData,
-                        registrationData = uiState.value.registrationData
-                    )
-                }
-                item {
-                    DashboardArray(
-                        arrayCapacityData = uiState.value.arrayData.arrayCapacityData,
-                        disks = uiState.value.arrayData.parityDisks + uiState.value.arrayData.disks
-                    )
-                }
-            }
+            LoadedDashboardScreen(uiState.value)
         }
 
         is GenericState.Error -> {
@@ -97,7 +77,45 @@ fun DashboardScreen() {
 }
 
 @Composable
-fun DashboardHeader(serverData: DashboardServerData, registrationData: DashboardRegistrationData) {
+fun LoadedDashboardScreen(dashboardData: DashboardData) {
+    BoxWithConstraints {
+        val columnCount = if (maxWidth > 600.dp) 2 else 1
+        LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Fixed(count = columnCount),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(all = 20.dp),
+            verticalItemSpacing = 16.dp,
+            horizontalArrangement = Arrangement.spacedBy(space = 12.dp)
+        ) {
+            item(span = StaggeredGridItemSpan.FullLine) {
+                DashboardHeader(dashboardData.serverData, dashboardData.registrationData)
+            }
+
+            val disks = dashboardData.arrayData.disks + dashboardData.arrayData.parityDisks
+            if (disks.isNotEmpty()) {
+                item {
+                    DashboardArray(
+                        dashboardData.arrayData.arrayCapacityData,
+                        dashboardData.arrayData.disks + dashboardData.arrayData.parityDisks
+                    )
+                }
+            }
+
+            if (dashboardData.sharesData.isNotEmpty()) {
+                item {
+                    DashboardShares(dashboardData.sharesData)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DashboardHeader(
+    serverData: DashboardServerData,
+    registrationData: DashboardRegistrationData
+) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.Start
@@ -138,63 +156,87 @@ fun DashboardHeader(serverData: DashboardServerData, registrationData: Dashboard
 }
 
 @Composable
-fun DashboardArray(arrayCapacityData: DashboardArrayCapacityData, disks: List<DashboardDiskData>) {
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.LightGray)
-            .defaultMinSize(minWidth = 200.dp)
-            .padding(all = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+fun DashboardArray(
+    arrayCapacityData: DashboardArrayCapacityData,
+    disks: List<DashboardDiskData>
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(all = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Image(
-                painter = painterResource(Res.drawable.ic_rack_server),
-                contentDescription = stringResource(Res.string.array_content_description),
-            )
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Start,
-                    text = stringResource(
-                        Res.string.array_disk_size,
-                        arrayCapacityData.arrayDiskSpaceSize
-                            .used
-                            .toUInt()
-                            .toFormattedFileSize(),
-                        arrayCapacityData.arrayDiskSpaceSize
-                            .total
-                            .toUInt()
-                            .toFormattedFileSize()
-                    )
-                )
-                LinearProgressIndicator(
-                    progress = arrayCapacityData.arrayDiskSpaceSize.used.toFloat() / arrayCapacityData.arrayDiskSpaceSize.total.toFloat(),
-                    modifier = Modifier.fillMaxWidth()
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                )
-            }
-        }
-
-        disks.forEach {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = it.name)
-                Text(text = it.status)
-                Text(text = it.size.toUInt().toFormattedFileSize())
-                Text(text = it.temperature.toString())
+                Image(
+                    painter = painterResource(Res.drawable.ic_rack_server),
+                    contentDescription = stringResource(Res.string.array_content_description),
+                )
+                LinearProgressIndicatorWithText(
+                    modifier = Modifier.weight(1f),
+                    progress = { arrayCapacityData.arrayDiskSpaceSize.used.toFloat() / arrayCapacityData.arrayDiskSpaceSize.total.toFloat() },
+                    numeratorText = "${
+                        arrayCapacityData.arrayDiskSpaceSize
+                            .used
+                            .toUInt().toFormattedFileSize()
+                    } used",
+                    denominatorText = "out of ${
+                        arrayCapacityData.arrayDiskSpaceSize
+                            .total
+                            .toUInt().toFormattedFileSize()
+                    }"
+                )
+            }
+
+            disks.forEach {
+                DashboardArrayDiskItem(it)
             }
         }
+    }
+}
+
+@Composable
+fun DashboardArrayDiskItem(disks: DashboardDiskData) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(text = disks.name)
+        Text(text = disks.status)
+        Text(text = disks.size.toUInt().toFormattedFileSize())
+        Text(text = "${disks.temperature}°C")
+    }
+}
+
+@Composable
+fun DashboardShares(shares: List<DashboardShareData>) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            shares.forEach { share ->
+                DashboardShareItem(share)
+            }
+        }
+    }
+}
+
+@Composable
+fun DashboardShareItem(shareData: DashboardShareData) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(text = shareData.name)
+        val usedSize = shareData.used.toUInt()
+        val freeSize = shareData.free.toUInt()
+        val totalSize = usedSize + freeSize
+        LinearProgressIndicatorWithText(
+            modifier = Modifier.weight(1f),
+            progress = { usedSize.toFloat() / totalSize.toFloat() },
+            numeratorText = "${usedSize.toFormattedFileSize()} used",
+            denominatorText = "out of ${totalSize.toFormattedFileSize()}"
+        )
     }
 }
 
@@ -229,6 +271,30 @@ fun DashboardArrayPreview() {
                 status = "Not Healthy",
                 temperature = 60,
                 size = "1230000000"
+            )
+        )
+    )
+}
+
+@Composable
+@Preview
+fun DashboardSharesPreview() {
+    DashboardShares(
+        shares = listOf(
+            DashboardShareData(
+                name = "Games",
+                used = "68855000",
+                free = "5000"
+            ),
+            DashboardShareData(
+                name = "A very very long name that would go beyond limit",
+                used = "1",
+                free = "24"
+            ),
+            DashboardShareData(
+                name = "A very very long name that would go beyond limit",
+                used = "69",
+                free = "0"
             )
         )
     )

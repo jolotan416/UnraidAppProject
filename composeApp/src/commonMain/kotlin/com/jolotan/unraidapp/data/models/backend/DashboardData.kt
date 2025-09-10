@@ -86,6 +86,9 @@ data class DashboardShareData(
     @SerialName("name")
     val name: String,
 
-    @SerialName("comment")
-    val description: String
+    @SerialName("used")
+    val used: String,
+
+    @SerialName("free")
+    val free: String
 )
