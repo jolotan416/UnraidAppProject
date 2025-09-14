@@ -7,6 +7,8 @@
     <string name="disk_size_mb">%1$s MB</string>
     <string name="disk_size_gb">%1$s GB</string>
     <string name="disk_size_tb">%1$s TB</string>
+    <string name="disk_total">/ %1$s</string>
+    <string name="text_limit">%1$s…</string>
 
     <!-- Login screen texts -->
     <string name="welcome_text">Welcome! Which NAS should we connect to?</string>
@@ -32,7 +34,6 @@
     <!-- Dashboard screen texts -->
     <string name="unraid_registration">Unraid OS: %1$s</string>
     <string name="expires_at">Expires at: %1$s</string>
-    <string name="array_disk_size">%1$s used out of %2$s</string>
 
     <!-- Content description -->
     <string name="back_button_content_description">Back button</string>

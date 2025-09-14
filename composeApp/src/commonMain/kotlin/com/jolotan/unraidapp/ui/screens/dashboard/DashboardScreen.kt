@@ -46,10 +46,14 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import unraidappproject.composeapp.generated.resources.Res
 import unraidappproject.composeapp.generated.resources.array_content_description
+import unraidappproject.composeapp.generated.resources.disk_total
 import unraidappproject.composeapp.generated.resources.expires_at
 import unraidappproject.composeapp.generated.resources.generic_loading_text
 import unraidappproject.composeapp.generated.resources.ic_rack_server
+import unraidappproject.composeapp.generated.resources.text_limit
 import unraidappproject.composeapp.generated.resources.unraid_registration
+
+private const val SHARE_ITEM_NAME_CHARACTER_LIMIT = 30
 
 @Composable
 fun DashboardScreen() {
@@ -79,7 +83,12 @@ fun DashboardScreen() {
 @Composable
 fun LoadedDashboardScreen(dashboardData: DashboardData) {
     BoxWithConstraints {
-        val columnCount = if (maxWidth > 600.dp) 2 else 1
+        val columnCount = when (maxWidth) {
+            in 0.dp..600.dp -> 1
+            in 601.dp..1200.dp -> 2
+            else -> 3
+        }
+
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Fixed(count = columnCount),
             modifier = Modifier
@@ -177,16 +186,14 @@ fun DashboardArray(
                 LinearProgressIndicatorWithText(
                     modifier = Modifier.weight(1f),
                     progress = { arrayCapacityData.arrayDiskSpaceSize.used.toFloat() / arrayCapacityData.arrayDiskSpaceSize.total.toFloat() },
-                    numeratorText = "${
-                        arrayCapacityData.arrayDiskSpaceSize
-                            .used
-                            .toUInt().toFormattedFileSize()
-                    } used",
-                    denominatorText = "out of ${
-                        arrayCapacityData.arrayDiskSpaceSize
+                    numeratorText = arrayCapacityData.arrayDiskSpaceSize
+                        .used
+                        .toUInt().toFormattedFileSize(),
+                    denominatorText = stringResource(
+                        Res.string.disk_total, arrayCapacityData.arrayDiskSpaceSize
                             .total
                             .toUInt().toFormattedFileSize()
-                    }"
+                    )
                 )
             }
 
@@ -227,15 +234,19 @@ fun DashboardShareItem(shareData: DashboardShareData) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(text = shareData.name)
+        val shareItemText =
+            if (shareData.name.length <= SHARE_ITEM_NAME_CHARACTER_LIMIT) shareData.name
+            else stringResource(Res.string.text_limit, shareData.name)
         val usedSize = shareData.used.toUInt()
         val freeSize = shareData.free.toUInt()
         val totalSize = usedSize + freeSize
+
+        Text(text = shareItemText)
         LinearProgressIndicatorWithText(
             modifier = Modifier.weight(1f),
             progress = { usedSize.toFloat() / totalSize.toFloat() },
-            numeratorText = "${usedSize.toFormattedFileSize()} used",
-            denominatorText = "out of ${totalSize.toFormattedFileSize()}"
+            numeratorText = usedSize.toFormattedFileSize(),
+            denominatorText = stringResource(Res.string.disk_total, totalSize.toFormattedFileSize())
         )
     }
 }

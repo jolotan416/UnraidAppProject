@@ -27,7 +27,8 @@ fun LinearProgressIndicatorWithText(
         LinearProgressIndicator(
             modifier = Modifier.Companion.fillMaxWidth()
                 .height(20.dp),
-            progress = progress
+            progress = progress,
+            drawStopIndicator = {}
         )
         Row(
             modifier = Modifier.Companion.fillMaxWidth()
