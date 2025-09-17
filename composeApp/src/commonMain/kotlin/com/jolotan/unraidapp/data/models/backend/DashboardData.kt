@@ -15,7 +15,10 @@ data class DashboardData(
     val arrayData: DashboardArrayData,
 
     @SerialName("shares")
-    val sharesData: List<DashboardShareData>
+    val sharesData: List<DashboardShareData>,
+
+    @SerialName("docker")
+    val dockerData: DashboardDockerData
 )
 
 @Serializable
@@ -91,4 +94,28 @@ data class DashboardShareData(
 
     @SerialName("free")
     val free: String
+)
+
+@Serializable
+data class DashboardDockerData(
+    @SerialName("containers")
+    val containers: List<DashboardDockerContainerData>
+)
+
+@Serializable
+data class DashboardDockerContainerData(
+    @SerialName("names")
+    val names: List<String>,
+
+    @SerialName("state")
+    val state: String,
+
+    @SerialName("labels")
+    val additionalData: DashboardDockerContainerAdditionalData
+)
+
+@Serializable
+data class DashboardDockerContainerAdditionalData(
+    @SerialName("net.unraid.docker.icon")
+    val icon: String?
 )

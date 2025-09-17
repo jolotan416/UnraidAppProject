@@ -64,6 +64,7 @@ val dataSourcesModule = module {
                 json(Json {
                     encodeDefaults = true
                     isLenient = true
+                    ignoreUnknownKeys = true
                     coerceInputValues = true
                     explicitNulls = true
                 })

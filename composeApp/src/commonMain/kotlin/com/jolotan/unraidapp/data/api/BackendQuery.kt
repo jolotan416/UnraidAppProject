@@ -44,6 +44,13 @@ enum class BackendQuery(val queryString: String) {
                 "  name" +
                 "  used" +
                 "  free" +
+                "}" +
+                "docker {" +
+                "  containers {" +
+                "    names" +
+                "    state" +
+                "    labels" +
+                "  }" +
                 "}"
     )
 }

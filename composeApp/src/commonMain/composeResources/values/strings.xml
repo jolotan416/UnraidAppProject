@@ -1,14 +1,22 @@
 <resources>
     <!-- Common texts -->
     <string name="ok">Ok</string>
+    <string name="reload">Reload</string>
     <string name="nas_other_error_message">Failed to connect to your Unraid NAS. Please try again later.</string>
     <string name="generic_loading_text">Please wait while we get your Unraid NAS data.</string>
+    <string name="generic_error_text">We encountered an error. Please try again later.</string>
+
     <string name="disk_size_kb">%1$s KB</string>
     <string name="disk_size_mb">%1$s MB</string>
     <string name="disk_size_gb">%1$s GB</string>
     <string name="disk_size_tb">%1$s TB</string>
-    <string name="disk_total">/ %1$s</string>
+    <string name="used_disk_size">%1$s used out of %2$s</string>
+
     <string name="text_limit">%1$s…</string>
+
+    <string name="disks_title">Disks</string>
+    <string name="shares_title">Shares</string>
+    <string name="docker_containers_title">Docker Containers</string>
 
     <!-- Login screen texts -->
     <string name="welcome_text">Welcome! Which NAS should we connect to?</string>

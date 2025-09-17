@@ -18,7 +18,7 @@ kotlin {
 
     androidTarget {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
@@ -51,6 +51,7 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
+            implementation(compose.materialIconsExtended)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
@@ -76,6 +77,10 @@ kotlin {
 
             // Navigation dependencies
             implementation(libs.compose.navigation)
+
+            // Image loading dependencies
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor3)
 
             // Utilities dependencies
             implementation(libs.napier.logging)
@@ -117,8 +122,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
@@ -145,5 +150,15 @@ compose.desktop {
             packageName = "com.jolotan.unraidapp"
             packageVersion = "1.0.0"
         }
+    }
+}
+
+project.afterEvaluate {
+    tasks.named("kspDebugKotlinAndroid") {
+        dependsOn("generateResourceAccessorsForAndroidDebug")
+    }
+
+    tasks.named("kspDebugKotlinAndroid") {
+        dependsOn("generateResourceAccessorsForAndroidMain")
     }
 }

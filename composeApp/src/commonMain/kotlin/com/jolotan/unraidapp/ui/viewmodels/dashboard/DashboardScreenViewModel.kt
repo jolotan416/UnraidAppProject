@@ -24,6 +24,7 @@ class DashboardScreenViewModel(private val queryApi: UnraidNasQueryApi) : ViewMo
         viewModelScope.launch {
             when (action) {
                 DashboardScreenAction.LoadDashboardData -> {
+                    dashboardDataStateFlow.value = GenericState.Loading
                     dashboardDataStateFlow.value = queryApi.queryDashboardData()
                 }
             }

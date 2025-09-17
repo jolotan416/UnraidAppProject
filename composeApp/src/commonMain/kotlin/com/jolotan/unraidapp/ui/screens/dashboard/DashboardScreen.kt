@@ -4,31 +4,47 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.ColorImage
+import coil3.annotation.ExperimentalCoilApi
+import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePreviewHandler
+import coil3.compose.LocalAsyncImagePreviewHandler
+import coil3.compose.LocalPlatformContext
+import coil3.request.ImageRequest
 import com.jolotan.unraidapp.data.GenericState
 import com.jolotan.unraidapp.data.models.backend.DashboardArrayCapacityData
 import com.jolotan.unraidapp.data.models.backend.DashboardArraySizeData
 import com.jolotan.unraidapp.data.models.backend.DashboardData
 import com.jolotan.unraidapp.data.models.backend.DashboardDiskData
+import com.jolotan.unraidapp.data.models.backend.DashboardDockerContainerAdditionalData
+import com.jolotan.unraidapp.data.models.backend.DashboardDockerContainerData
 import com.jolotan.unraidapp.data.models.backend.DashboardRegistrationData
 import com.jolotan.unraidapp.data.models.backend.DashboardServerData
 import com.jolotan.unraidapp.data.models.backend.DashboardShareData
@@ -46,12 +62,17 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import unraidappproject.composeapp.generated.resources.Res
 import unraidappproject.composeapp.generated.resources.array_content_description
-import unraidappproject.composeapp.generated.resources.disk_total
+import unraidappproject.composeapp.generated.resources.disks_title
+import unraidappproject.composeapp.generated.resources.docker_containers_title
 import unraidappproject.composeapp.generated.resources.expires_at
+import unraidappproject.composeapp.generated.resources.generic_error_text
 import unraidappproject.composeapp.generated.resources.generic_loading_text
 import unraidappproject.composeapp.generated.resources.ic_rack_server
+import unraidappproject.composeapp.generated.resources.reload
+import unraidappproject.composeapp.generated.resources.shares_title
 import unraidappproject.composeapp.generated.resources.text_limit
 import unraidappproject.composeapp.generated.resources.unraid_registration
+import unraidappproject.composeapp.generated.resources.used_disk_size
 
 private const val SHARE_ITEM_NAME_CHARACTER_LIMIT = 30
 
@@ -61,13 +82,7 @@ fun DashboardScreen() {
     val dashboardScreenUiState by dashboardScreenViewModel.dashboardScreenUiStateStateFlow.collectAsStateWithLifecycle()
     when (val uiState = dashboardScreenUiState) {
         GenericState.Loading -> {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(all = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(text = stringResource(Res.string.generic_loading_text))
-                CircularProgressIndicator()
-            }
+            LoadingDashboardScreen()
         }
 
         is GenericState.Loaded -> {
@@ -75,8 +90,26 @@ fun DashboardScreen() {
         }
 
         is GenericState.Error -> {
-
+            ErrorDashboardScreen {
+                dashboardScreenViewModel.handleAction(DashboardScreenViewModel.DashboardScreenAction.LoadDashboardData)
+            }
         }
+    }
+}
+
+@Preview
+@Composable
+fun LoadingDashboardScreen() {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(all = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = stringResource(Res.string.generic_loading_text),
+            style = MaterialTheme.typography.bodyMedium
+        )
+        CircularProgressIndicator()
     }
 }
 
@@ -94,7 +127,7 @@ fun LoadedDashboardScreen(dashboardData: DashboardData) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(all = 20.dp),
-            verticalItemSpacing = 16.dp,
+            verticalItemSpacing = 12.dp,
             horizontalArrangement = Arrangement.spacedBy(space = 12.dp)
         ) {
             item(span = StaggeredGridItemSpan.FullLine) {
@@ -116,6 +149,32 @@ fun LoadedDashboardScreen(dashboardData: DashboardData) {
                     DashboardShares(dashboardData.sharesData)
                 }
             }
+
+            val dockerContainers =
+                dashboardData.dockerData.containers.filter { it.names.isNotEmpty() }
+            if (dockerContainers.isNotEmpty()) {
+                item {
+                    DashboardDockerContainers(dockerContainers)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ErrorDashboardScreen(reload: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+            .padding(all = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = stringResource(Res.string.generic_error_text),
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Button(onClick = reload) {
+            Text(text = stringResource(Res.string.reload))
         }
     }
 }
@@ -131,8 +190,7 @@ fun DashboardHeader(
     ) {
         Text(
             text = serverData.name,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Medium
+            style = MaterialTheme.typography.headlineLarge
         )
         Spacer(modifier = Modifier.height(12.dp))
         Text(
@@ -140,8 +198,7 @@ fun DashboardHeader(
                 Res.string.unraid_registration,
                 registrationData.registrationType,
             ),
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Normal
+            style = MaterialTheme.typography.bodyLarge
         )
         Spacer(modifier = Modifier.height(4.dp))
         registrationData.updateExpiration.toDateOrNull()?.let {
@@ -157,10 +214,10 @@ fun DashboardHeader(
                         char(' '); amPmMarker("am", "pm")
                     })
                 ),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Normal
+                style = MaterialTheme.typography.bodyLarge
             )
         }
+        Spacer(modifier = Modifier.height(12.dp))
     }
 }
 
@@ -169,7 +226,10 @@ fun DashboardArray(
     arrayCapacityData: DashboardArrayCapacityData,
     disks: List<DashboardDiskData>
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    DashboardCardItem(
+        modifier = Modifier.fillMaxWidth(),
+        title = stringResource(Res.string.disks_title)
+    ) {
         Column(
             modifier = Modifier.padding(all = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -186,14 +246,15 @@ fun DashboardArray(
                 LinearProgressIndicatorWithText(
                     modifier = Modifier.weight(1f),
                     progress = { arrayCapacityData.arrayDiskSpaceSize.used.toFloat() / arrayCapacityData.arrayDiskSpaceSize.total.toFloat() },
-                    numeratorText = arrayCapacityData.arrayDiskSpaceSize
-                        .used
-                        .toUInt().toFormattedFileSize(),
-                    denominatorText = stringResource(
-                        Res.string.disk_total, arrayCapacityData.arrayDiskSpaceSize
+                    text = stringResource(
+                        Res.string.used_disk_size,
+                        arrayCapacityData.arrayDiskSpaceSize
+                            .used
+                            .toUInt().toFormattedFileSize(),
+                        arrayCapacityData.arrayDiskSpaceSize
                             .total
                             .toUInt().toFormattedFileSize()
-                    )
+                    ),
                 )
             }
 
@@ -210,7 +271,11 @@ fun DashboardArrayDiskItem(disks: DashboardDiskData) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(text = disks.name)
+        BasicText(
+            modifier = Modifier.weight(1f),
+            text = disks.name,
+            overflow = TextOverflow.Ellipsis
+        )
         Text(text = disks.status)
         Text(text = disks.size.toUInt().toFormattedFileSize())
         Text(text = "${disks.temperature}°C")
@@ -219,8 +284,14 @@ fun DashboardArrayDiskItem(disks: DashboardDiskData) {
 
 @Composable
 fun DashboardShares(shares: List<DashboardShareData>) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(20.dp)) {
+    DashboardCardItem(
+        modifier = Modifier.fillMaxWidth(),
+        title = stringResource(Res.string.shares_title)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             shares.forEach { share ->
                 DashboardShareItem(share)
             }
@@ -232,7 +303,8 @@ fun DashboardShares(shares: List<DashboardShareData>) {
 fun DashboardShareItem(shareData: DashboardShareData) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         val shareItemText =
             if (shareData.name.length <= SHARE_ITEM_NAME_CHARACTER_LIMIT) shareData.name
@@ -241,13 +313,74 @@ fun DashboardShareItem(shareData: DashboardShareData) {
         val freeSize = shareData.free.toUInt()
         val totalSize = usedSize + freeSize
 
-        Text(text = shareItemText)
-        LinearProgressIndicatorWithText(
+        BasicText(
             modifier = Modifier.weight(1f),
-            progress = { usedSize.toFloat() / totalSize.toFloat() },
-            numeratorText = usedSize.toFormattedFileSize(),
-            denominatorText = stringResource(Res.string.disk_total, totalSize.toFormattedFileSize())
+            text = shareItemText,
+            overflow = TextOverflow.Ellipsis
         )
+        LinearProgressIndicatorWithText(
+            progress = { usedSize.toFloat() / totalSize.toFloat() },
+            text = stringResource(
+                Res.string.used_disk_size,
+                usedSize.toFormattedFileSize(),
+                totalSize.toFormattedFileSize()
+            ),
+        )
+    }
+}
+
+@Composable
+fun DashboardDockerContainers(dockerContainers: List<DashboardDockerContainerData>) {
+    DashboardCardItem(
+        modifier = Modifier.fillMaxWidth(),
+        title = stringResource(Res.string.docker_containers_title)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            dockerContainers.forEach { dockerContainer ->
+                DashboardDockerContainerItem(dockerContainerData = dockerContainer)
+            }
+        }
+    }
+}
+
+@Composable
+fun DashboardDockerContainerItem(dockerContainerData: DashboardDockerContainerData) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        AsyncImage(
+            modifier = Modifier.size(24.dp),
+            model = ImageRequest.Builder(LocalPlatformContext.current)
+                .data(dockerContainerData.additionalData.icon)
+                .build(),
+            contentDescription = dockerContainerData.names.first(),
+        )
+        BasicText(
+            modifier = Modifier.weight(1f),
+            text = dockerContainerData.names.first().removePrefix("/"),
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(text = dockerContainerData.state)
+    }
+}
+
+@Composable
+fun DashboardCardItem(
+    modifier: Modifier = Modifier,
+    title: String,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            modifier = Modifier.fillMaxWidth(),
+            text = title,
+            style = MaterialTheme.typography.headlineSmall
+        )
+
+        Card(modifier = Modifier.fillMaxWidth()) {
+            content()
+        }
     }
 }
 
@@ -293,20 +426,52 @@ fun DashboardSharesPreview() {
     DashboardShares(
         shares = listOf(
             DashboardShareData(
-                name = "Games",
+                name = "share_1",
                 used = "68855000",
                 free = "5000"
             ),
             DashboardShareData(
-                name = "A very very long name that would go beyond limit",
+                name = "share_2",
                 used = "1",
                 free = "24"
             ),
             DashboardShareData(
-                name = "A very very long name that would go beyond limit",
+                name = "share_3_has_a_very_very_long_name_here",
                 used = "69",
                 free = "0"
             )
         )
     )
+}
+
+@OptIn(ExperimentalCoilApi::class)
+@Preview
+@Composable
+fun DashboardDockerContainersPreview() {
+    val previewHandler = AsyncImagePreviewHandler {
+        ColorImage(Color.Red.toArgb())
+    }
+
+    CompositionLocalProvider(LocalAsyncImagePreviewHandler provides previewHandler) {
+        DashboardDockerContainers(
+            dockerContainers = listOf(
+                DashboardDockerContainerData(
+                    names = listOf("/nginx-webserver"),
+                    state = "RUNNING",
+                    additionalData = DashboardDockerContainerAdditionalData("https://raw.githubusercontent.com/linuxserver/docker-templates/master/linuxserver.io/img/mariadb-logo.png")
+                ),
+                DashboardDockerContainerData(
+                    names = listOf("pihole-dns", "dns-blocker"),
+                    state = "EXITED",
+                    additionalData = DashboardDockerContainerAdditionalData(null)
+                )
+            )
+        )
+    }
+}
+
+@Preview
+@Composable
+fun ErrorDashboardScreenPreview() {
+    ErrorDashboardScreen { }
 }
