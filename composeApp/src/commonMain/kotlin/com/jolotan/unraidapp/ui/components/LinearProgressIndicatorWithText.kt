@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,13 +27,13 @@ fun LinearProgressIndicatorWithText(
         horizontalAlignment = Alignment.End
     ) {
         Text(
-            modifier = Modifier.wrapContentWidth(),
+            modifier = Modifier.fillMaxWidth(),
             text = text,
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Right
         )
         LinearProgressIndicator(
-            modifier = Modifier.width(150.dp).fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             progress = progress,
             trackColor = MaterialTheme.colorScheme.inversePrimary,
             color = MaterialTheme.colorScheme.primary,

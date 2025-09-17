@@ -319,6 +319,7 @@ fun DashboardShareItem(shareData: DashboardShareData) {
             overflow = TextOverflow.Ellipsis
         )
         LinearProgressIndicatorWithText(
+            modifier = Modifier.weight(1f),
             progress = { usedSize.toFloat() / totalSize.toFloat() },
             text = stringResource(
                 Res.string.used_disk_size,
