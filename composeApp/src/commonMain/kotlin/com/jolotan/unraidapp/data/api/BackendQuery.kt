@@ -51,6 +51,10 @@ enum class BackendQuery(val queryString: String) {
                 "    state" +
                 "    labels" +
                 "  }" +
+                "}" +
+                "parityHistory {" +
+                "  date" +
+                "  status" +
                 "}"
     )
 }

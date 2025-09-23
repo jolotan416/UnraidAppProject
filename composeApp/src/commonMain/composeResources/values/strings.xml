@@ -18,6 +18,12 @@
     <string name="shares_title">Shares</string>
     <string name="docker_containers_title">Docker Containers</string>
 
+    <string name="few_seconds">a few seconds ago</string>
+    <string name="few_minutes">a few minutes ago</string>
+    <string name="few_hours">a few hours ago</string>
+    <string name="yesterday">yesterday</string>
+    <string name="last_week">last week</string>
+
     <!-- Login screen texts -->
     <string name="welcome_text">Welcome! Which NAS should we connect to?</string>
     <string name="ip_address">IP Address</string>
@@ -42,6 +48,8 @@
     <!-- Dashboard screen texts -->
     <string name="unraid_registration">Unraid OS: %1$s</string>
     <string name="expires_at">Expires at: %1$s</string>
+    <string name="last_parity_check_done">Last successful parity check done %1$s.</string>
+    <string name="no_parity_checks_done">No parity checks done to disks.</string>
 
     <!-- Content description -->
     <string name="back_button_content_description">Back button</string>

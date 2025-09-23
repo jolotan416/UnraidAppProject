@@ -45,17 +45,21 @@ import com.jolotan.unraidapp.data.models.backend.DashboardData
 import com.jolotan.unraidapp.data.models.backend.DashboardDiskData
 import com.jolotan.unraidapp.data.models.backend.DashboardDockerContainerAdditionalData
 import com.jolotan.unraidapp.data.models.backend.DashboardDockerContainerData
+import com.jolotan.unraidapp.data.models.backend.DashboardParityData
 import com.jolotan.unraidapp.data.models.backend.DashboardRegistrationData
 import com.jolotan.unraidapp.data.models.backend.DashboardServerData
 import com.jolotan.unraidapp.data.models.backend.DashboardShareData
 import com.jolotan.unraidapp.ui.components.LinearProgressIndicatorWithText
-import com.jolotan.unraidapp.ui.utils.toDateOrNull
+import com.jolotan.unraidapp.ui.utils.convertTimestampToDateOrNull
+import com.jolotan.unraidapp.ui.utils.convertToDurationString
 import com.jolotan.unraidapp.ui.utils.toFormattedFileSize
 import com.jolotan.unraidapp.ui.viewmodels.dashboard.DashboardScreenViewModel
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -68,11 +72,15 @@ import unraidappproject.composeapp.generated.resources.expires_at
 import unraidappproject.composeapp.generated.resources.generic_error_text
 import unraidappproject.composeapp.generated.resources.generic_loading_text
 import unraidappproject.composeapp.generated.resources.ic_rack_server
+import unraidappproject.composeapp.generated.resources.last_parity_check_done
+import unraidappproject.composeapp.generated.resources.no_parity_checks_done
 import unraidappproject.composeapp.generated.resources.reload
 import unraidappproject.composeapp.generated.resources.shares_title
 import unraidappproject.composeapp.generated.resources.text_limit
 import unraidappproject.composeapp.generated.resources.unraid_registration
 import unraidappproject.composeapp.generated.resources.used_disk_size
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 private const val SHARE_ITEM_NAME_CHARACTER_LIMIT = 30
 
@@ -139,6 +147,7 @@ fun LoadedDashboardScreen(dashboardData: DashboardData) {
                 item {
                     DashboardArray(
                         dashboardData.arrayData.arrayCapacityData,
+                        dashboardData.parityHistory,
                         dashboardData.arrayData.disks + dashboardData.arrayData.parityDisks
                     )
                 }
@@ -201,7 +210,7 @@ fun DashboardHeader(
             style = MaterialTheme.typography.bodyLarge
         )
         Spacer(modifier = Modifier.height(4.dp))
-        registrationData.updateExpiration.toDateOrNull()?.let {
+        registrationData.updateExpiration.convertTimestampToDateOrNull()?.let {
             Text(
                 text = stringResource(
                     Res.string.expires_at,
@@ -224,7 +233,8 @@ fun DashboardHeader(
 @Composable
 fun DashboardArray(
     arrayCapacityData: DashboardArrayCapacityData,
-    disks: List<DashboardDiskData>
+    parityHistory: List<DashboardParityData>,
+    disks: List<DashboardDiskData>,
 ) {
     DashboardCardItem(
         modifier = Modifier.fillMaxWidth(),
@@ -257,6 +267,24 @@ fun DashboardArray(
                     ),
                 )
             }
+
+            val lastSuccessfulParity =
+                parityHistory.filter { parityData -> parityData.status == "OK" }
+            if (!lastSuccessfulParity.isEmpty()) {
+                Text(
+                    text = stringResource(
+                        Res.string.last_parity_check_done,
+                        lastSuccessfulParity.first().date.convertToDurationString()
+                    ),
+                    style = MaterialTheme.typography.titleSmall
+                )
+            } else {
+                Text(
+                    text = stringResource(Res.string.no_parity_checks_done),
+                    style = MaterialTheme.typography.titleSmall
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
 
             disks.forEach {
                 DashboardArrayDiskItem(it)
@@ -304,7 +332,7 @@ fun DashboardShareItem(shareData: DashboardShareData) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         val shareItemText =
             if (shareData.name.length <= SHARE_ITEM_NAME_CHARACTER_LIMIT) shareData.name
@@ -314,7 +342,6 @@ fun DashboardShareItem(shareData: DashboardShareData) {
         val totalSize = usedSize + freeSize
 
         BasicText(
-            modifier = Modifier.weight(1f),
             text = shareItemText,
             overflow = TextOverflow.Ellipsis
         )
@@ -396,6 +423,7 @@ fun DashboardHeaderPreview() {
     )
 }
 
+@OptIn(ExperimentalTime::class)
 @Composable
 @Preview
 fun DashboardArrayPreview() {
@@ -403,6 +431,11 @@ fun DashboardArrayPreview() {
         arrayCapacityData = DashboardArrayCapacityData(
             arrayDiskSpaceSize = DashboardArraySizeData("68855000", "69000000", "14500"),
             arrayDiskSlotsSize = DashboardArraySizeData("1", "24", "23")
+        ),
+        parityHistory = listOf(
+            DashboardParityData(
+                Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()), "OK"
+            )
         ),
         disks = listOf(
             DashboardDiskData(

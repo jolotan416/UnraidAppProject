@@ -1,5 +1,6 @@
 package com.jolotan.unraidapp.data.models.backend
 
+import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -18,7 +19,10 @@ data class DashboardData(
     val sharesData: List<DashboardShareData>,
 
     @SerialName("docker")
-    val dockerData: DashboardDockerData
+    val dockerData: DashboardDockerData,
+
+    @SerialName("parityHistory")
+    val parityHistory: List<DashboardParityData>
 )
 
 @Serializable
@@ -118,4 +122,14 @@ data class DashboardDockerContainerData(
 data class DashboardDockerContainerAdditionalData(
     @SerialName("net.unraid.docker.icon")
     val icon: String?
+)
+
+@Serializable
+data class DashboardParityData(
+    @Serializable(with = FormattedDateStringToLocalDateTimeSerializer::class)
+    @SerialName("date")
+    val date: LocalDateTime,
+
+    @SerialName("status")
+    val status: String
 )
