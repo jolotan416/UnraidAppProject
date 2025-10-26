@@ -353,12 +353,13 @@ fun DashboardShareItem(shareData: DashboardShareData) {
         val totalSize = usedSize + freeSize
 
         BasicText(
+            modifier = Modifier.weight(0.4f),
             text = shareItemText,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.labelLarge
         )
         LinearProgressIndicatorWithText(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(0.6f),
             progress = { usedSize.toFloat() / totalSize.toFloat() },
             text = stringResource(
                 Res.string.used_disk_size,
