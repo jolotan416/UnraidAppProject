@@ -112,11 +112,20 @@ data class DashboardDockerContainerData(
     val names: List<String>,
 
     @SerialName("state")
-    val state: String,
+    val state: DashboardDockerContainerState,
 
     @SerialName("labels")
     val additionalData: DashboardDockerContainerAdditionalData
 )
+
+@Serializable
+enum class DashboardDockerContainerState {
+    @SerialName("RUNNING")
+    RUNNING,
+
+    @SerialName("EXITED")
+    EXITED,
+}
 
 @Serializable
 data class DashboardDockerContainerAdditionalData(

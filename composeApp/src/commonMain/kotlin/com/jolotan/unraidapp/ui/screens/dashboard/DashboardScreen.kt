@@ -45,6 +45,7 @@ import com.jolotan.unraidapp.data.models.backend.DashboardData
 import com.jolotan.unraidapp.data.models.backend.DashboardDiskData
 import com.jolotan.unraidapp.data.models.backend.DashboardDockerContainerAdditionalData
 import com.jolotan.unraidapp.data.models.backend.DashboardDockerContainerData
+import com.jolotan.unraidapp.data.models.backend.DashboardDockerContainerState
 import com.jolotan.unraidapp.data.models.backend.DashboardParityData
 import com.jolotan.unraidapp.data.models.backend.DashboardRegistrationData
 import com.jolotan.unraidapp.data.models.backend.DashboardServerData
@@ -380,7 +381,7 @@ fun DashboardDockerContainerItem(dockerContainerData: DashboardDockerContainerDa
             text = dockerContainerData.names.first().removePrefix("/"),
             overflow = TextOverflow.Ellipsis
         )
-        Text(text = dockerContainerData.state)
+        Text(text = dockerContainerData.state.name)
     }
 }
 
@@ -486,12 +487,12 @@ fun DashboardDockerContainersPreview() {
             dockerContainers = listOf(
                 DashboardDockerContainerData(
                     names = listOf("/nginx-webserver"),
-                    state = "RUNNING",
+                    state = DashboardDockerContainerState.RUNNING,
                     additionalData = DashboardDockerContainerAdditionalData("https://raw.githubusercontent.com/linuxserver/docker-templates/master/linuxserver.io/img/mariadb-logo.png")
                 ),
                 DashboardDockerContainerData(
                     names = listOf("pihole-dns", "dns-blocker"),
-                    state = "EXITED",
+                    state = DashboardDockerContainerState.EXITED,
                     additionalData = DashboardDockerContainerAdditionalData(null)
                 )
             )
