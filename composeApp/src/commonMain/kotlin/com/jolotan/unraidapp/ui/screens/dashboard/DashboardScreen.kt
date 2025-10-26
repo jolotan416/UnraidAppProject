@@ -16,9 +16,13 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -84,6 +88,9 @@ import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 private const val SHARE_ITEM_NAME_CHARACTER_LIMIT = 30
+
+// TODO: Use MaterialTheme color
+private val SUCCESS_COLOR = Color(0xFF63A361)
 
 @Composable
 fun DashboardScreen() {
@@ -274,12 +281,14 @@ fun DashboardArray(
                         Res.string.last_parity_check_done,
                         lastSuccessfulParity.first().date.convertToDurationString()
                     ),
-                    style = MaterialTheme.typography.titleSmall
+                    style = MaterialTheme.typography.titleSmall,
+                    color = SUCCESS_COLOR,
                 )
             } else {
                 Text(
                     text = stringResource(Res.string.no_parity_checks_done),
-                    style = MaterialTheme.typography.titleSmall
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.error
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -300,11 +309,18 @@ fun DashboardArrayDiskItem(disks: DashboardDiskData) {
         BasicText(
             modifier = Modifier.weight(1f),
             text = disks.name,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.labelLarge
         )
-        Text(text = disks.status)
-        Text(text = disks.size.toUInt().toFormattedFileSize())
-        Text(text = "${disks.temperature}°C")
+        Text(
+            text = disks.status,
+            style = MaterialTheme.typography.bodySmall
+        )
+        Text(
+            text = disks.size.toUInt().toFormattedFileSize(),
+            style = MaterialTheme.typography.bodySmall
+        )
+        Text(text = "${disks.temperature}°C", style = MaterialTheme.typography.bodySmall)
     }
 }
 
@@ -338,7 +354,8 @@ fun DashboardShareItem(shareData: DashboardShareData) {
 
         BasicText(
             text = shareItemText,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.labelLarge
         )
         LinearProgressIndicatorWithText(
             modifier = Modifier.weight(1f),
@@ -378,10 +395,42 @@ fun DashboardDockerContainerItem(dockerContainerData: DashboardDockerContainerDa
         )
         BasicText(
             modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.labelLarge,
             text = dockerContainerData.names.first().removePrefix("/"),
             overflow = TextOverflow.Ellipsis
         )
-        Text(text = dockerContainerData.state.name)
+        DashboardDockerContainerState(dockerContainerState = dockerContainerData.state)
+    }
+}
+
+@Composable
+fun DashboardDockerContainerState(
+    modifier: Modifier = Modifier,
+    dockerContainerState: DashboardDockerContainerState
+) {
+    val (color, icon) = when (dockerContainerState) {
+        DashboardDockerContainerState.RUNNING -> Pair(SUCCESS_COLOR, Icons.Default.PlayArrow)
+        DashboardDockerContainerState.EXITED -> Pair(
+            MaterialTheme.colorScheme.error,
+            Icons.Default.Stop
+        )
+    }
+
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = dockerContainerState.name,
+            tint = color
+        )
+        Text(
+            text = dockerContainerState.name,
+            style = MaterialTheme.typography.bodySmall,
+            color = color
+        )
     }
 }
 
