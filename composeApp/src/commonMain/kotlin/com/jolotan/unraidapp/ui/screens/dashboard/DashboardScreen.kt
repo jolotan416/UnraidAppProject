@@ -240,10 +240,7 @@ fun DashboardArray(
         modifier = Modifier.fillMaxWidth(),
         title = stringResource(Res.string.disks_title)
     ) {
-        Column(
-            modifier = Modifier.padding(all = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -316,10 +313,7 @@ fun DashboardShares(shares: List<DashboardShareData>) {
         modifier = Modifier.fillMaxWidth(),
         title = stringResource(Res.string.shares_title)
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             shares.forEach { share ->
                 DashboardShareItem(share)
             }
@@ -363,10 +357,7 @@ fun DashboardDockerContainers(dockerContainers: List<DashboardDockerContainerDat
         modifier = Modifier.fillMaxWidth(),
         title = stringResource(Res.string.docker_containers_title)
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             dockerContainers.forEach { dockerContainer ->
                 DashboardDockerContainerItem(dockerContainerData = dockerContainer)
             }
@@ -399,14 +390,18 @@ fun DashboardCardItem(
     title: String,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            modifier = Modifier.fillMaxWidth(),
-            text = title,
-            style = MaterialTheme.typography.headlineSmall
-        )
-
-        Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                modifier = Modifier.fillMaxWidth(),
+                text = title,
+                style = MaterialTheme.typography.headlineSmall
+            )
             content()
         }
     }

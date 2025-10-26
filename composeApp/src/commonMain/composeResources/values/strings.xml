@@ -48,7 +48,7 @@
     <!-- Dashboard screen texts -->
     <string name="unraid_registration">Unraid OS: %1$s</string>
     <string name="expires_at">Expires at: %1$s</string>
-    <string name="last_parity_check_done">Last successful parity check done %1$s.</string>
+    <string name="last_parity_check_done">Last successful parity check done on %1$s.</string>
     <string name="no_parity_checks_done">No parity checks done to disks.</string>
 
     <!-- Content description -->
