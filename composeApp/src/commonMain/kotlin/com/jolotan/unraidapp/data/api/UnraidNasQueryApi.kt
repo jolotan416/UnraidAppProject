@@ -71,23 +71,30 @@ class UnraidNasQueryApiImpl(private val httpClient: HttpClient) : UnraidNasQuery
         _currentNasConnectionDataFlow.first().run {
             val queryUrl = "$baseUrl/$queryPath"
             InternalLog.d(tag = TAG, message = "Performing post query: $queryUrl")
-            val response =
-                httpClient.post(queryUrl) {
-                    configureCommonHeaders(this@run)
-                    setBody(queryBodyString)
-                }
 
-            when (response.status) {
-                HttpStatusCode.OK -> response
-                HttpStatusCode.Found -> {
-                    val updatedBaseUrl = response.headers["Location"]?.removeSuffix("/$queryPath")
-                        ?: error("New location is not found after encountering status code 302.")
-                    _currentNasConnectionDataFlow.emit(copy(baseUrl = updatedBaseUrl))
-                    performPostQuery(queryPath, queryBodyString)
-                }
+            try {
+                val response =
+                    httpClient.post(queryUrl) {
+                        configureCommonHeaders(this@run)
+                        setBody(queryBodyString)
+                    }
 
-                else -> error("Encountered status code with: ${response.status}")
+                when (response.status) {
+                    HttpStatusCode.OK -> response
+                    HttpStatusCode.Found -> {
+                        val updatedBaseUrl =
+                            response.headers["Location"]?.removeSuffix("/$queryPath")
+                                ?: error("New location is not found after encountering status code 302.")
+                        _currentNasConnectionDataFlow.emit(copy(baseUrl = updatedBaseUrl))
+                        performPostQuery(queryPath, queryBodyString)
+                    }
+
+                    else -> error("Encountered status code with: ${response.status}")
+                }
+            } catch (exception: IllegalArgumentException) {
+                error("Encountered exception: $exception")
             }
+
         }
 
     private fun HttpRequestBuilder.configureCommonHeaders(nasConnectionData: NasConnectionData) {
